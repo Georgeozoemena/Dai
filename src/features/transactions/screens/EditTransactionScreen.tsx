@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -154,9 +155,7 @@ export function EditTransactionScreen({
         updatedTransaction,
       );
 
-      if (onBack) {
-        onBack();
-      }
+      router.back();
     } catch (error) {
       console.error(
         "FAILED TO UPDATE TRANSACTION:",

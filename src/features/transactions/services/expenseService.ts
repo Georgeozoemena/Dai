@@ -1,7 +1,5 @@
 import type { Transaction } from "../../../types/transaction";
-import {
-  createTransaction,
-} from "./transactionService";
+import { createTransaction } from "./transactionService";
 
 interface CreateExpenseInput {
   accountId: string;
@@ -12,9 +10,7 @@ interface CreateExpenseInput {
   date: string;
 }
 
-export async function createExpense(
-  input: CreateExpenseInput,
-) {
+export async function createExpense(input: CreateExpenseInput) {
   const now = new Date().toISOString();
 
   const transaction: Transaction = {

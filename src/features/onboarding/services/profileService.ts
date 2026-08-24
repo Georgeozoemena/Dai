@@ -5,17 +5,13 @@ export async function getProfile() {
   return profileRepository.getProfile();
 }
 
-export async function createProfile(
-  profile: Profile,
-) {
+export async function createProfile(profile: Profile) {
   await profileRepository.createProfile(profile);
 
   return profile;
 }
 
-export async function updateProfile(
-  profile: Profile,
-) {
+export async function updateProfile(profile: Profile) {
   await profileRepository.updateProfile(profile);
 
   return profile;

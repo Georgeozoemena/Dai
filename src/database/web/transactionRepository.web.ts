@@ -18,14 +18,9 @@ export const transactionRepository: TransactionRepository = {
   async getTransaction(id) {
     const db = await getDatabase();
 
-    const transaction = await db.get(
-      "transactions",
-      id,
-    );
+    const transaction = await db.get("transactions", id);
 
-    return (
-      transaction as Transaction | undefined
-    ) ?? null;
+    return (transaction as Transaction | undefined) ?? null;
   },
 
   async createTransaction(transaction) {

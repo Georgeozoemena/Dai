@@ -34,13 +34,15 @@ export function ExpenseScreen() {
   const [date, setDate] = useState(new Date().toISOString());
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
-  const [currentAccount, setCurrentAccountData] = useState<Account | null>(null);
+  const [currentAccount, setCurrentAccountData] = useState<Account | null>(
+    null,
+  );
 
   useEffect(() => {
     async function loadAccounts() {
       const profile = await getProfile();
       if (!profile) return;
-      
+
       const allAccounts = await getAccounts(profile.id);
       setAccounts(allAccounts);
     }
@@ -122,7 +124,7 @@ export function ExpenseScreen() {
 
       const transactions = await getTransactions(currentAccountId);
 
-      console.log("ACCOUNT TRANSACTIONS:", transactions)
+      console.log("ACCOUNT TRANSACTIONS:", transactions);
     } catch (error) {
       console.error("FAILED TO CREATE EXPENSE:", error);
     }

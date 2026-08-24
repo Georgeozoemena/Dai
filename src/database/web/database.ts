@@ -22,35 +22,31 @@ let databasePromise: Promise<IDBPDatabase<DenariDatabase>> | null = null;
 
 export function getDatabase() {
   if (!databasePromise) {
-    databasePromise = openDB<DenariDatabase>(
-      DATABASE_NAME,
-      DATABASE_VERSION,
-      {
-        upgrade(db) {
-          if (!db.objectStoreNames.contains("profiles")) {
-            db.createObjectStore("profiles", {
-              keyPath: "id",
-            });
-          }
+    databasePromise = openDB<DenariDatabase>(DATABASE_NAME, DATABASE_VERSION, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains("profiles")) {
+          db.createObjectStore("profiles", {
+            keyPath: "id",
+          });
+        }
 
-          if (!db.objectStoreNames.contains("accounts")) {
-            const store = db.createObjectStore("accounts", {
-              keyPath: "id",
-            });
+        if (!db.objectStoreNames.contains("accounts")) {
+          const store = db.createObjectStore("accounts", {
+            keyPath: "id",
+          });
 
-            store.createIndex("profileId", "profileId");
-          }
+          store.createIndex("profileId", "profileId");
+        }
 
-          if (!db.objectStoreNames.contains("transactions")) {
-            const store = db.createObjectStore("transactions", {
-              keyPath: "id",
-            });
+        if (!db.objectStoreNames.contains("transactions")) {
+          const store = db.createObjectStore("transactions", {
+            keyPath: "id",
+          });
 
-            store.createIndex("accountId", "accountId");
-          }
-        },
+          store.createIndex("accountId", "accountId");
+        }
       },
-    );
+    });
   }
 
   return databasePromise;

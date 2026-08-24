@@ -167,8 +167,8 @@ export default function App() {
   // return <ExpenseScreen />;
   // return <AccountsScreen />;
   // return <IncomeScreen />;
-  // return <TransactionsScreen />
-  return <DashboardScreen />;
-  return <EditTransactionScreen transactionId="e5b1b3f0-0fd5-4d43-ab5f-e12771ac9d62" />
-  // return <TransactionDetailScreen transactionId="e5b1b3f0-0fd5-4d43-ab5f-e12771ac9d62" />;
+  return <TransactionsScreen />;
+  // return <DashboardScreen />;
+  // return <EditTransactionScreen transactionId="4d6cee35-e715-4b23-b1be-4653a70f2c7b" />
+  // return <TransactionDetailScreen transactionId="d78abbe3-85a0-45d5-9e1c-3e6739d77898" />;
 }

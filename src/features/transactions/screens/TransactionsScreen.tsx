@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -14,9 +14,7 @@ import { useAccountStore } from "../../../store/account/accountStore";
 
 import { getAccount } from "../../accounts/services/accountService";
 
-import {
-  getTransactions,
-} from "../services/transactionService";
+import { getTransactions } from "../services/transactionService";
 
 import {
   filterTransactions,
@@ -24,25 +22,17 @@ import {
 } from "../services/transactionFilterService";
 
 export function TransactionsScreen() {
-  const currentAccountId =
-    useAccountStore(
-      (state) => state.currentAccountId,
-    );
+  const currentAccountId = useAccountStore((state) => state.currentAccountId);
 
-  const [transactions, setTransactions] =
-    useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const [accountName, setAccountName] =
-    useState("");
+  const [accountName, setAccountName] = useState("");
 
-  const [currencySymbol, setCurrencySymbol] =
-    useState("");
+  const [currencySymbol, setCurrencySymbol] = useState("");
 
-  const [filter, setFilter] =
-    useState<TransactionFilter>("all");
+  const [filter, setFilter] = useState<TransactionFilter>("all");
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadTransactions() {
@@ -55,44 +45,27 @@ export function TransactionsScreen() {
       try {
         setLoading(true);
 
-        const account =
-          await getAccount(
-            currentAccountId,
-          );
+        const account = await getAccount(currentAccountId);
 
         if (account) {
           setAccountName(account.name);
 
-          if (
-            account.currencyCode === "NGN"
-          ) {
+          if (account.currencyCode === "NGN") {
             setCurrencySymbol("₦");
-          } else if (
-            account.currencyCode === "USD"
-          ) {
+          } else if (account.currencyCode === "USD") {
             setCurrencySymbol("$");
-          } else if (
-            account.currencyCode === "EUR"
-          ) {
+          } else if (account.currencyCode === "EUR") {
             setCurrencySymbol("€");
           } else {
-            setCurrencySymbol(
-              account.currencyCode,
-            );
+            setCurrencySymbol(account.currencyCode);
           }
         }
 
-        const data =
-          await getTransactions(
-            currentAccountId,
-          );
+        const data = await getTransactions(currentAccountId);
 
         setTransactions(data);
       } catch (error) {
-        console.error(
-          "FAILED TO LOAD TRANSACTIONS:",
-          error,
-        );
+        console.error("FAILED TO LOAD TRANSACTIONS:", error);
       } finally {
         setLoading(false);
       }
@@ -101,11 +74,7 @@ export function TransactionsScreen() {
     loadTransactions();
   }, [currentAccountId]);
 
-  const filteredTransactions =
-    filterTransactions(
-      transactions,
-      filter,
-    );
+  const filteredTransactions = filterTransactions(transactions, filter);
 
   if (loading) {
     return (
@@ -118,9 +87,7 @@ export function TransactionsScreen() {
       >
         <ActivityIndicator />
 
-        <Text style={{ marginTop: 12 }}>
-          Loading transactions...
-        </Text>
+        <Text style={{ marginTop: 12 }}>Loading transactions...</Text>
       </View>
     );
   }
@@ -151,8 +118,7 @@ export function TransactionsScreen() {
             textAlign: "center",
           }}
         >
-          Select an account to view
-          your transactions.
+          Select an account to view your transactions.
         </Text>
       </View>
     );
@@ -195,37 +161,23 @@ export function TransactionsScreen() {
           gap: 8,
         }}
       >
-        {(
-          [
-            "all",
-            "income",
-            "expense",
-          ] as TransactionFilter[]
-        ).map((item) => {
-          const selected =
-            filter === item;
+        {(["all", "income", "expense"] as TransactionFilter[]).map((item) => {
+          const selected = filter === item;
 
           return (
             <Pressable
               key={item}
-              onPress={() =>
-                setFilter(item)
-              }
+              onPress={() => setFilter(item)}
               style={{
                 paddingHorizontal: 16,
                 paddingVertical: 10,
                 borderRadius: 20,
-                backgroundColor:
-                  selected
-                    ? "#111"
-                    : "#eee",
+                backgroundColor: selected ? "#111" : "#eee",
               }}
             >
               <Text
                 style={{
-                  color: selected
-                    ? "#fff"
-                    : "#111",
+                  color: selected ? "#fff" : "#111",
                   fontWeight: "600",
                 }}
               >
@@ -242,8 +194,7 @@ export function TransactionsScreen() {
 
       {/* Transactions */}
 
-      {filteredTransactions.length ===
-      0 ? (
+      {filteredTransactions.length === 0 ? (
         <View
           style={{
             paddingVertical: 40,
@@ -270,91 +221,75 @@ export function TransactionsScreen() {
         </View>
       ) : (
         <View style={{ gap: 12 }}>
-          {filteredTransactions.map(
-            (transaction) => {
-              const isExpense =
-                transaction.type ===
-                "expense";
+          {filteredTransactions.map((transaction) => {
+            const isExpense = transaction.type === "expense";
 
-              return (
+            return (
+              <Pressable
+                key={transaction.id}
+                onPress={() => router.push(`/transaction/${transaction.id}`)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 14,
+                  padding: 16,
+                }}
+              >
                 <View
-                  key={transaction.id}
                   style={{
-                    borderWidth: 1,
-                    borderColor: "#ddd",
-                    borderRadius: 14,
-                    padding: 16,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
                   }}
                 >
                   <View
                     style={{
-                      flexDirection:
-                        "row",
-                      justifyContent:
-                        "space-between",
+                      flex: 1,
+                      paddingRight: 12,
                     }}
                   >
-                    <View
-                      style={{
-                        flex: 1,
-                        paddingRight: 12,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight:
-                            "600",
-                        }}
-                      >
-                        {
-                          transaction.category
-                        }
-                      </Text>
-
-                      {transaction.description && (
-                        <Text
-                          style={{
-                            marginTop: 4,
-                            color: "#666",
-                          }}
-                        >
-                          {
-                            transaction.description
-                          }
-                        </Text>
-                      )}
-
-                      <Text
-                        style={{
-                          marginTop: 6,
-                          color: "#999",
-                        }}
-                      >
-                        {new Date(
-                          transaction.date,
-                        ).toLocaleDateString()}
-                      </Text>
-                    </View>
-
                     <Text
                       style={{
                         fontSize: 16,
-                        fontWeight:
-                          "700",
+                        fontWeight: "600",
                       }}
                     >
-                      {isExpense
-                        ? "-"
-                        : "+"}
-                      {currencySymbol}
-                      {transaction.amount.toLocaleString()}
+                      {transaction.category}
+                    </Text>
+
+                    {transaction.description && (
+                      <Text
+                        style={{
+                          marginTop: 4,
+                          color: "#666",
+                        }}
+                      >
+                        {transaction.description}
+                      </Text>
+                    )}
+
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        color: "#999",
+                      }}
+                    >
+                      {new Date(transaction.date).toLocaleDateString()}
                     </Text>
                   </View>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {isExpense ? "-" : "+"}
+                    {currencySymbol}
+                    {transaction.amount.toLocaleString()}
+                  </Text>
                 </View>
-              );
-            },
-          )}
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </ScrollView>

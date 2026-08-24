@@ -12,7 +12,10 @@ import {
 import { AmountInput } from "../components/AmountInput";
 import type { Account } from "../../../types/account";
 import { useAccountStore } from "../../../store/account/accountStore";
-import { getAccount, getAccounts } from "../../accounts/services/accountService";
+import {
+  getAccount,
+  getAccounts,
+} from "../../accounts/services/accountService";
 import { getProfile } from "../../onboarding/services/profileService";
 import { createIncome } from "../services/incomeService";
 
@@ -27,13 +30,15 @@ export function IncomeScreen() {
   const [date, setDate] = useState(new Date().toISOString());
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
-  const [currentAccount, setCurrentAccountData] = useState<Account | null>(null);
+  const [currentAccount, setCurrentAccountData] = useState<Account | null>(
+    null,
+  );
 
   useEffect(() => {
     async function loadAccounts() {
       const profile = await getProfile();
       if (!profile) return;
-      
+
       const allAccounts = await getAccounts(profile.id);
       setAccounts(allAccounts);
     }
@@ -82,13 +87,9 @@ export function IncomeScreen() {
       return "Please enter an amount.";
     }
 
-    const numericAmount =
-      Number(amount);
+    const numericAmount = Number(amount);
 
-    if (
-      Number.isNaN(numericAmount) ||
-      numericAmount <= 0
-    ) {
+    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
       return "Amount must be greater than 0.";
     }
 
@@ -103,38 +104,27 @@ export function IncomeScreen() {
     const error = validateForm();
 
     if (error) {
-      console.log(
-        "VALIDATION ERROR:",
-        error,
-      );
+      console.log("VALIDATION ERROR:", error);
 
       return;
     }
 
     try {
-      const transaction =
-        await createIncome({
-          accountId:
-            currentAccountId!,
-          amount: Number(amount),
-          category: category.trim(),
-          description,
-          date,
-        });
+      const transaction = await createIncome({
+        accountId: currentAccountId!,
+        amount: Number(amount),
+        category: category.trim(),
+        description,
+        date,
+      });
 
-      console.log(
-        "INCOME CREATED:",
-        transaction,
-      );
+      console.log("INCOME CREATED:", transaction);
 
       setAmount("");
       setCategory("");
       setDescription("");
     } catch (error) {
-      console.error(
-        "FAILED TO CREATE INCOME:",
-        error,
-      );
+      console.error("FAILED TO CREATE INCOME:", error);
     }
   };
 
@@ -163,8 +153,7 @@ export function IncomeScreen() {
             color: "#666",
           }}
         >
-          Track money coming into
-          your account.
+          Track money coming into your account.
         </Text>
       </View>
 
@@ -208,9 +197,7 @@ export function IncomeScreen() {
       {/* Amount */}
 
       <AmountInput
-        currencySymbol={
-          currencySymbol
-        }
+        currencySymbol={currencySymbol}
         value={amount}
         onChange={setAmount}
       />
@@ -256,9 +243,7 @@ export function IncomeScreen() {
 
         <TextInput
           value={description}
-          onChangeText={
-            setDescription
-          }
+          onChangeText={setDescription}
           placeholder="Where did this money come from?"
           style={{
             borderWidth: 1,
@@ -292,11 +277,7 @@ export function IncomeScreen() {
             paddingVertical: 14,
           }}
         >
-          <Text>
-            {new Date(
-              date,
-            ).toLocaleDateString()}
-          </Text>
+          <Text>{new Date(date).toLocaleDateString()}</Text>
         </View>
       </View>
 

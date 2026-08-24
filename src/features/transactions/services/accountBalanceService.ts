@@ -6,20 +6,14 @@ import {
   calculateBalance,
 } from "./transactionCalculationService";
 
-export async function getAccountBalance(
-  accountId: string,
-) {
-  const transactions =
-    await getTransactions(accountId);
+export async function getAccountBalance(accountId: string) {
+  const transactions = await getTransactions(accountId);
 
-  const income =
-    calculateIncome(transactions);
+  const income = calculateIncome(transactions);
 
-  const expenses =
-    calculateExpenses(transactions);
+  const expenses = calculateExpenses(transactions);
 
-  const balance =
-    calculateBalance(transactions);
+  const balance = calculateBalance(transactions);
 
   return {
     income,

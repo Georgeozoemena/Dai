@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -6,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import type { Transaction } from "../../../types/transaction";
 
@@ -120,13 +122,26 @@ export function TransactionDetailScreen({
 
       console.log("TRANSACTION DELETED:", transaction.id);
 
-      if (onBack) {
-        onBack();
-      }
+      router.back();
     } catch (error) {
       console.error("FAILED TO DELETE TRANSACTION:", error);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!transaction) {
+      return;
+    }
+
+    // Use native browser confirm for web compatibility
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this transaction? This action cannot be undone.",
+    );
+
+    if (confirmed) {
+      handleDelete();
     }
   };
 
@@ -236,13 +251,18 @@ export function TransactionDetailScreen({
       </View>
 
       <Pressable
+        onPress={() => router.push(`/transaction/${transactionId}/edit`)}
         style={{
           paddingVertical: 16,
           borderRadius: 14,
           backgroundColor: "#111",
           alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 8,
         }}
       >
+        <Ionicons name="create-outline" size={20} color="#fff" />
         <Text
           style={{
             color: "#fff",
@@ -255,7 +275,7 @@ export function TransactionDetailScreen({
       </Pressable>
 
       <Pressable
-        onPress={handleDelete}
+        onPress={confirmDelete}
         disabled={deleting}
         style={{
           paddingVertical: 16,
@@ -263,9 +283,13 @@ export function TransactionDetailScreen({
           borderWidth: 1,
           borderColor: "#d00",
           alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 8,
           opacity: deleting ? 0.5 : 1,
         }}
       >
+        <Ionicons name="trash-outline" size={20} color="#d00" />
         <Text
           style={{
             color: "#d00",

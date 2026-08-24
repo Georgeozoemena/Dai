@@ -10,10 +10,7 @@ interface CategorySelectorProps {
   onChange: (category: ExpenseCategory) => void;
 }
 
-export function CategorySelector({
-  value,
-  onChange,
-}: CategorySelectorProps) {
+export function CategorySelector({ value, onChange }: CategorySelectorProps) {
   return (
     <View style={{ gap: 12 }}>
       <Text
@@ -43,16 +40,12 @@ export function CategorySelector({
                 paddingHorizontal: 16,
                 paddingVertical: 12,
                 borderRadius: 20,
-                backgroundColor: isSelected
-                  ? "#111"
-                  : "#f2f2f2",
+                backgroundColor: isSelected ? "#111" : "#f2f2f2",
               }}
             >
               <Text
                 style={{
-                  color: isSelected
-                    ? "#fff"
-                    : "#111",
+                  color: isSelected ? "#fff" : "#111",
                   fontWeight: "500",
                 }}
               >

@@ -1,4 +1,4 @@
-import { getTransactions } from "../../transactions/services/transactionService";
+import type { Transaction } from "../../../types/transaction";
 
 import {
   calculateIncome,
@@ -6,34 +6,24 @@ import {
   calculateBalance,
 } from "../../transactions/services/transactionCalculationService";
 
-export async function getDashboardData(
-  accountId: string,
+export function calculateDashboardSummary(
+  transactions: Transaction[],
 ) {
-  const transactions =
-    await getTransactions(accountId);
+  const income = calculateIncome(
+    transactions,
+  );
 
-  const income =
-    calculateIncome(transactions);
+  const expenses = calculateExpenses(
+    transactions,
+  );
 
-  const expenses =
-    calculateExpenses(transactions);
-
-  const balance =
-    calculateBalance(transactions);
-
-  const recentTransactions =
-    [...transactions]
-      .sort(
-        (a, b) =>
-          new Date(b.date).getTime() -
-          new Date(a.date).getTime(),
-      )
-      .slice(0, 5);
+  const balance = calculateBalance(
+    transactions,
+  );
 
   return {
     income,
     expenses,
     balance,
-    recentTransactions,
   };
 }

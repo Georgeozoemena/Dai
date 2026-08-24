@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { router } from "expo-router";
 
 import type { Account } from "../../../types/account";
 
 import { getAccounts } from "../../../features/accounts/services/accountService";
-import {
-  selectAccount,
-} from "../../../features/accounts/services/accountSelectionService";
+import { selectAccount } from "../../../features/accounts/services/accountSelectionService";
 
 import { getProfile } from "../../onboarding/services/profileService";
 
@@ -19,25 +13,16 @@ import { useAccountStore } from "../../../store/account/accountStore";
 
 import { AccountCard } from "../components/AccountCard";
 
-
 export function AccountsScreen() {
-  const currentAccountId = useAccountStore(
-    (state) => state.currentAccountId,
-  );
+  const currentAccountId = useAccountStore((state) => state.currentAccountId);
 
-  console.log(
-  "ACCOUNTS SCREEN - CURRENT ACCOUNT:",
-  currentAccountId,
-);
+  console.log("ACCOUNTS SCREEN - CURRENT ACCOUNT:", currentAccountId);
 
-  const [accounts, setAccounts] =
-    useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -52,8 +37,7 @@ export function AccountsScreen() {
           return;
         }
 
-        const profileAccounts =
-          await getAccounts(profile.id);
+        const profileAccounts = await getAccounts(profile.id);
 
         setAccounts(profileAccounts);
 
@@ -61,21 +45,13 @@ export function AccountsScreen() {
          * If there is no currently selected account,
          * select the first available account.
          */
-        if (
-          !currentAccountId &&
-          profileAccounts.length > 0
-        ) {
+        if (!currentAccountId && profileAccounts.length > 0) {
           selectAccount(profileAccounts[0]);
         }
       } catch (err) {
-        console.error(
-          "Failed to load accounts:",
-          err,
-        );
+        console.error("Failed to load accounts:", err);
 
-        setError(
-          "Unable to load your accounts.",
-        );
+        setError("Unable to load your accounts.");
       } finally {
         setLoading(false);
       }
@@ -95,9 +71,7 @@ export function AccountsScreen() {
       >
         <ActivityIndicator />
 
-        <Text style={{ marginTop: 12 }}>
-          Loading accounts...
-        </Text>
+        <Text style={{ marginTop: 12 }}>Loading accounts...</Text>
       </View>
     );
   }
@@ -152,26 +126,18 @@ export function AccountsScreen() {
       </View>
 
       {accounts.length === 0 ? (
-        <Text>
-          You don't have any accounts yet.
-        </Text>
+        <Text>You don't have any accounts yet.</Text>
       ) : (
         <View style={{ gap: 12 }}>
           {accounts.map((account) => (
             <AccountCard
               key={account.id}
               account={account}
-              selected={
-                currentAccountId === account.id
-              }
+              selected={currentAccountId === account.id}
               onPress={() => {
-                  console.log(
-    "SELECTING ACCOUNT:",
-    account,
-  );
-                selectAccount(account)
-              }
-              }
+                selectAccount(account);
+                router.back();
+              }}
             />
           ))}
         </View>
