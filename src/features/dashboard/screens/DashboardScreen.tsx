@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 import {
   ActivityIndicator,
@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import type { Transaction } from "../../../types/transaction";
@@ -17,91 +17,145 @@ import { useAccountStore } from "../../../store/account/accountStore";
 
 import { getAccount } from "../../accounts/services/accountService";
 
-import {
-  getTransactions,
-} from "../../transactions/services/transactionService";
+import { getTransactions } from "../../transactions/services/transactionService";
+
+import { calculateDashboardSummary } from "../services/dashboardService";
 
 import {
-  calculateDashboardSummary,
-} from "../services/dashboardService";
+  getBudget,
+  getBudgetCategories,
+} from "../../budget/services/budgetService";
+
+import { calculateBudgetCategorySummaries } from "../../budget/services/budgetCalculationService";
 
 export function DashboardScreen() {
-  const currentAccountId =
-    useAccountStore(
-      (state) => state.currentAccountId,
-    );
+  const currentAccountId = useAccountStore((state) => state.currentAccountId);
 
-  const [accountName, setAccountName] =
-    useState("");
+  const [accountName, setAccountName] = useState("");
 
-  const [currencySymbol, setCurrencySymbol] =
-    useState("");
+  const [currencySymbol, setCurrencySymbol] = useState("");
 
-  const [transactions, setTransactions] =
-    useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadDashboard() {
-      if (!currentAccountId) {
-        setLoading(false);
-        return;
-      }
+  const [budgetHealth, setBudgetHealth] = useState<{
+    totalBudget: number;
+    totalSpent: number;
+    percentage: number;
+    status: "healthy" | "warning" | "exceeded";
+  } | null>(null);
 
-      try {
-        setLoading(true);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
+    [],
+  );
 
-        const account =
-          await getAccount(
-            currentAccountId,
-          );
-
-        if (account) {
-          setAccountName(account.name);
-
-          if (
-            account.currencyCode === "NGN"
-          ) {
-            setCurrencySymbol("₦");
-          } else if (
-            account.currencyCode === "USD"
-          ) {
-            setCurrencySymbol("$");
-          } else if (
-            account.currencyCode === "EUR"
-          ) {
-            setCurrencySymbol("€");
-          } else if (
-            account.currencyCode === "GBP"
-          ) {
-            setCurrencySymbol("£");
-          } else {
-            setCurrencySymbol(
-              account.currencyCode,
-            );
-          }
+  useFocusEffect(
+    useCallback(() => {
+      async function loadDashboard() {
+        if (!currentAccountId) {
+          setAccountName("");
+          setCurrencySymbol("");
+          setTransactions([]);
+          setLoading(false);
+          return;
         }
 
-        const data =
-          await getTransactions(
-            currentAccountId,
-          );
+        try {
+          setLoading(true);
 
-        setTransactions(data);
-      } catch (error) {
-        console.error(
-          "FAILED TO LOAD DASHBOARD:",
-          error,
-        );
-      } finally {
-        setLoading(false);
+          const account = await getAccount(currentAccountId);
+
+          if (account) {
+            setAccountName(account.name);
+
+            switch (account.currencyCode) {
+              case "NGN":
+                setCurrencySymbol("₦");
+                break;
+
+              case "USD":
+                setCurrencySymbol("$");
+                break;
+
+              case "EUR":
+                setCurrencySymbol("€");
+                break;
+
+              case "GBP":
+                setCurrencySymbol("£");
+                break;
+
+              default:
+                setCurrencySymbol(account.currencyCode);
+            }
+          }
+
+          const data = await getTransactions(currentAccountId);
+
+          setTransactions(data);
+
+          const month = new Date().toISOString().slice(0, 7);
+
+          const budgetData = await getBudget(currentAccountId, month);
+
+          if (budgetData) {
+            const budgetCategories = await getBudgetCategories(budgetData.id);
+
+            const transactions = await getTransactions(currentAccountId);
+
+            const summaries = calculateBudgetCategorySummaries(
+              budgetCategories,
+              transactions,
+              month,
+            );
+
+            const totalSpent = summaries.reduce(
+              (total, category) => total + category.spent,
+              0,
+            );
+
+            const percentage =
+              budgetData.totalBudget > 0
+                ? (totalSpent / budgetData.totalBudget) * 100
+                : 0;
+
+            const status =
+              percentage >= 100
+                ? "exceeded"
+                : percentage >= 75
+                  ? "warning"
+                  : "healthy";
+
+            setBudgetHealth({
+              totalBudget: budgetData.totalBudget,
+              totalSpent,
+              percentage,
+              status,
+            });
+          } else {
+            setBudgetHealth(null);
+          }
+
+          const transactions = await getTransactions(currentAccountId);
+
+          const recent = [...transactions]
+            .sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+            )
+            .slice(0, 5);
+
+          setRecentTransactions(recent);
+        } catch (error) {
+          console.error("FAILED TO LOAD DASHBOARD:", error);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
 
-    loadDashboard();
-  }, [currentAccountId]);
+      loadDashboard();
+    }, [currentAccountId]),
+  );
 
   if (loading) {
     return (
@@ -137,9 +191,7 @@ export function DashboardScreen() {
           No account selected
         </Text>
         <Pressable
-          onPress={() =>
-            router.push("/(tabs)/accounts")
-          }
+          onPress={() => router.push("/(tabs)/accounts")}
           style={{
             marginTop: 20,
             backgroundColor: "#111",
@@ -161,19 +213,7 @@ export function DashboardScreen() {
     );
   }
 
-  const summary =
-    calculateDashboardSummary(
-      transactions,
-    );
-
-  const recentTransactions =
-    [...transactions]
-      .sort(
-        (a, b) =>
-          new Date(b.date).getTime() -
-          new Date(a.date).getTime(),
-      )
-      .slice(0, 5);
+  const summary = calculateDashboardSummary(transactions);
 
   return (
     <ScrollView
@@ -183,31 +223,49 @@ export function DashboardScreen() {
       }}
     >
       {/* Header */}
-      <View>
-        <Text
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: "#666",
+            }}
+          >
+            Welcome back
+          </Text>
+          <Text
+            style={{
+              marginTop: 4,
+              fontSize: 32,
+              fontWeight: "700",
+            }}
+          >
+            {accountName}
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={() => router.push("/settings")}
           style={{
-            fontSize: 16,
-            color: "#666",
+            padding: 10,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: "#ddd",
           }}
         >
-          Welcome back
-        </Text>
-        <Text
-          style={{
-            marginTop: 4,
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          {accountName}
-        </Text>
+          <Ionicons name="settings-outline" size={24} color="#111" />
+        </Pressable>
       </View>
 
       {/* Account Switcher */}
       <Pressable
-        onPress={() =>
-          router.push("/(tabs)/accounts")
-        }
+        onPress={() => router.push("/(tabs)/accounts")}
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -291,7 +349,11 @@ export function DashboardScreen() {
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="arrow-down-circle-outline" size={16} color="#4caf50" />
+            <Ionicons
+              name="arrow-down-circle-outline"
+              size={16}
+              color="#4caf50"
+            />
             <Text style={{ color: "#666" }}>Income</Text>
           </View>
           <Text
@@ -315,7 +377,11 @@ export function DashboardScreen() {
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="arrow-up-circle-outline" size={16} color="#f44336" />
+            <Ionicons
+              name="arrow-up-circle-outline"
+              size={16}
+              color="#f44336"
+            />
             <Text style={{ color: "#666" }}>Expenses</Text>
           </View>
           <Text
@@ -349,9 +415,7 @@ export function DashboardScreen() {
           }}
         >
           <Pressable
-            onPress={() =>
-              router.push("/expense")
-            }
+            onPress={() => router.push("/expense")}
             style={{
               flex: 1,
               backgroundColor: "#111",
@@ -374,9 +438,7 @@ export function DashboardScreen() {
             </Text>
           </Pressable>
           <Pressable
-            onPress={() =>
-              router.push("/income")
-            }
+            onPress={() => router.push("/income")}
             style={{
               flex: 1,
               borderWidth: 1,
@@ -401,15 +463,155 @@ export function DashboardScreen() {
         </View>
       </View>
 
-      {/* Recent Transactions */}
+      {/* Budget Health */}
       <View>
+        {budgetHealth && (
+          <Pressable
+            onPress={() => router.push("/(tabs)/budget")}
+            style={{
+              padding: 20,
+              borderRadius: 18,
+              backgroundColor: "#000000",
+              gap: 12,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: "#ffffff"
+                }}
+                >
+                Monthly Budget
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: "#ffffff"
+                }}
+              >
+                {budgetHealth.status === "healthy"
+                  ? "🟢 On track"
+                  : budgetHealth.status === "warning"
+                    ? "🟡 Be careful"
+                    : "🔴 Exceeded"}
+              </Text>
+            </View>
+
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: "#eae7e7",
+              }}
+            >
+              ₦{budgetHealth.totalSpent.toLocaleString()} spent
+            </Text>
+
+            <Text style={{ color: "#666" }}>
+              of ₦{budgetHealth.totalBudget.toLocaleString()}
+            </Text>
+
+            {/* Progress Bar */}
+
+            <View
+              style={{
+                height: 8,
+                backgroundColor: "#ddd",
+                borderRadius: 10,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  width: `${Math.min(budgetHealth.percentage, 100)}%`,
+                  height: "100%",
+                  backgroundColor:
+                    budgetHealth.status === "exceeded"
+                      ? "#d00"
+                      : budgetHealth.status === "warning"
+                        ? "#e6a700"
+                        : "#1a9c4b",
+                }}
+              />
+            </View>
+
+            <Text
+              style={{
+                fontSize: 13,
+                color: "#666",
+              }}
+            >
+              {budgetHealth.percentage.toFixed(0)}% of your monthly budget used
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "600",
+                marginTop: 4,
+              }}
+            >
+              View Budget →
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* Savings Goals */}
+      <Pressable
+        onPress={() => router.push("/savings-goals")}
+        style={{
+          padding: 20,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: "#ddd",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Ionicons name="flag-outline" size={24} color="#111" />
+          <View>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+              }}
+            >
+              Savings Goals
+            </Text>
+            <Text
+              style={{
+                marginTop: 4,
+                fontSize: 13,
+                color: "#666",
+              }}
+            >
+              Track your progress
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </Pressable>
+
+      {/* Recent Transactions */}
+      <View style={{ gap: 14 }}>
         <View
           style={{
             flexDirection: "row",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 12,
           }}
         >
           <Text
@@ -420,116 +622,79 @@ export function DashboardScreen() {
           >
             Recent Transactions
           </Text>
-          <Pressable
-            onPress={() =>
-              router.push("/(tabs)/activity")
-            }
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
+
+          <Pressable onPress={() => router.push("/(tabs)/activity")}>
             <Text
               style={{
                 fontWeight: "600",
               }}
             >
-              See all
+              See All →
             </Text>
-            <Ionicons name="chevron-forward" size={16} color="#111" />
           </Pressable>
         </View>
-        {recentTransactions.length ===
-        0 ? (
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: "#ddd",
-              borderRadius: 14,
-              padding: 20,
-            }}
-          >
-            <Text
-              style={{
-                color: "#666",
-                textAlign: "center",
-              }}
-            >
-              No transactions yet.
-            </Text>
-          </View>
+
+        {recentTransactions.length === 0 ? (
+          <Text style={{ color: "#666" }}>No transactions yet.</Text>
         ) : (
           <View style={{ gap: 10 }}>
-            {recentTransactions.map(
-              (transaction) => {
-                const isExpense =
-                  transaction.type ===
-                  "expense";
+            {recentTransactions.map((transaction) => {
+              const isExpense = transaction.type === "expense";
 
-                return (
-                  <Pressable
-                    key={transaction.id}
-                    onPress={() =>
-                      router.push(
-                        `/transaction/${transaction.id}`,
-                      )
-                    }
+              return (
+                <Pressable
+                  key={transaction.id}
+                  onPress={() => router.push(`/transaction/${transaction.id}`)}
+                  style={{
+                    padding: 16,
+                    borderWidth: 1,
+                    borderColor: "#eee",
+                    borderRadius: 14,
+                  }}
+                >
+                  <View
                     style={{
-                      borderWidth: 1,
-                      borderColor: "#ddd",
-                      borderRadius: 14,
-                      padding: 16,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <View
-                      style={{
-                        flexDirection:
-                          "row",
-                        justifyContent:
-                          "space-between",
-                      }}
-                    >
-                      <View>
-                        <Text
-                          style={{
-                            fontWeight:
-                              "600",
-                          }}
-                        >
-                          {
-                            transaction.category
-                          }
-                        </Text>
-                        {transaction.description && (
-                          <Text
-                            style={{
-                              marginTop: 4,
-                              color: "#666",
-                            }}
-                          >
-                            {
-                              transaction.description
-                            }
-                          </Text>
-                        )}
-                      </View>
+                    <View style={{ flex: 1 }}>
                       <Text
                         style={{
-                          fontWeight: "700",
+                          fontSize: 16,
+                          fontWeight: "600",
                         }}
                       >
-                        {isExpense
-                          ? "-"
-                          : "+"}
-                        {currencySymbol}
-                        {transaction.amount.toLocaleString()}
+                        {transaction.category}
+                      </Text>
+
+                      <Text
+                        style={{
+                          marginTop: 4,
+                          color: "#666",
+                          fontSize: 13,
+                        }}
+                      >
+                        {transaction.description ||
+                          new Date(transaction.date).toLocaleDateString()}
                       </Text>
                     </View>
-                  </Pressable>
-                );
-              },
-            )}
+
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: isExpense ? "#d00" : "#1a9c4b",
+                      }}
+                    >
+                      {isExpense ? "-" : "+"}₦
+                      {transaction.amount.toLocaleString()}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         )}
       </View>

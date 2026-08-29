@@ -8,9 +8,10 @@ import { CreateAccountScreen } from "../features/onboarding/screens/CreateAccoun
 import { selectAccount } from "../features/accounts/services/accountSelectionService";
 
 export default function CreateAccountRoute() {
-  const { profileId } =
+  const { profileId, returnTo } =
     useLocalSearchParams<{
       profileId: string;
+      returnTo?: string;
     }>();
 
   if (!profileId) {
@@ -25,8 +26,14 @@ export default function CreateAccountRoute() {
         // the currently selected account.
         selectAccount(account);
 
-        // Continue to the main application.
-        router.replace("/(tabs)");
+        // Navigate based on returnTo parameter
+        // If coming from Accounts tab, go back there
+        // Otherwise, continue to main application
+        if (returnTo === "accounts") {
+          router.replace("/(tabs)/accounts");
+        } else {
+          router.replace("/(tabs)");
+        }
       }}
     />
   );

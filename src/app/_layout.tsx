@@ -6,7 +6,14 @@ export default function RootLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Dai",
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="bootstrap/index"
+        options={{
+          headerShown: false,
         }}
       />
 
@@ -39,6 +46,27 @@ export default function RootLayout() {
       />
 
       <Stack.Screen
+        name="pin-setup"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="pin-lock"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="budget"
+        options={{
+          title: "Build Budget",
+        }}
+      />
+
+      <Stack.Screen
         name="expense"
         options={{
           title: "Add Expense",
@@ -63,6 +91,34 @@ export default function RootLayout() {
         name="transaction/[id]/edit"
         options={{
           title: "Edit Transaction",
+        }}
+      />
+
+      <Stack.Screen
+        name="create-goal"
+        options={{
+          title: "Create Savings Goal",
+        }}
+      />
+
+      <Stack.Screen
+        name="savings-goals"
+        options={{
+          title: "Savings Goals",
+        }}
+      />
+
+      <Stack.Screen
+        name="goal/[id]"
+        options={{
+          title: "Savings Goal",
+        }}
+      />
+
+      <Stack.Screen
+        name="settings"
+        options={{
+          title: "Settings",
         }}
       />
     </Stack>

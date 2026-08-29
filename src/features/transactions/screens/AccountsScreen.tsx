@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
-import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import type { Account } from "../../../types/account";
 
@@ -24,41 +25,43 @@ export function AccountsScreen() {
 
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadAccounts() {
-      try {
-        setLoading(true);
-        setError(null);
+  useFocusEffect(
+    useCallback(() => {
+      async function loadAccounts() {
+        try {
+          setLoading(true);
+          setError(null);
 
-        const profile = await getProfile();
+          const profile = await getProfile();
 
-        if (!profile) {
-          setError("No profile found.");
-          return;
+          if (!profile) {
+            setError("No profile found.");
+            return;
+          }
+
+          const profileAccounts = await getAccounts(profile.id);
+
+          setAccounts(profileAccounts);
+
+          /*
+           * If there is no currently selected account,
+           * select the first available account.
+           */
+          if (!currentAccountId && profileAccounts.length > 0) {
+            selectAccount(profileAccounts[0]);
+          }
+        } catch (err) {
+          console.error("Failed to load accounts:", err);
+
+          setError("Unable to load your accounts.");
+        } finally {
+          setLoading(false);
         }
-
-        const profileAccounts = await getAccounts(profile.id);
-
-        setAccounts(profileAccounts);
-
-        /*
-         * If there is no currently selected account,
-         * select the first available account.
-         */
-        if (!currentAccountId && profileAccounts.length > 0) {
-          selectAccount(profileAccounts[0]);
-        }
-      } catch (err) {
-        console.error("Failed to load accounts:", err);
-
-        setError("Unable to load your accounts.");
-      } finally {
-        setLoading(false);
       }
-    }
 
-    loadAccounts();
-  }, [currentAccountId]);
+      loadAccounts();
+    }, [currentAccountId]),
+  );
 
   if (loading) {
     return (
@@ -114,7 +117,6 @@ export function AccountsScreen() {
         >
           My Accounts
         </Text>
-
         <Text
           style={{
             marginTop: 6,
@@ -125,8 +127,60 @@ export function AccountsScreen() {
         </Text>
       </View>
 
+      {/* Create Account Button */}
+      <Pressable
+        onPress={async () => {
+          const profile = await getProfile();
+          if (profile) {
+            router.push({
+              pathname: "/create-account",
+              params: { 
+                profileId: profile.id,
+                returnTo: "accounts",
+              },
+            });
+          }
+        }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          backgroundColor: "#111",
+          paddingVertical: 16,
+          borderRadius: 14,
+        }}
+      >
+        <Ionicons name="add-circle-outline" size={20} color="#fff" />
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 16,
+            fontWeight: "600",
+          }}
+        >
+          Create New Account
+        </Text>
+      </Pressable>
+
       {accounts.length === 0 ? (
-        <Text>You don't have any accounts yet.</Text>
+        <View
+          style={{
+            paddingVertical: 40,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 16,
+              color: "#666",
+              textAlign: "center",
+            }}
+          >
+            You don't have any accounts yet.{"\n"}
+            Create one to get started.
+          </Text>
+        </View>
       ) : (
         <View style={{ gap: 12 }}>
           {accounts.map((account) => (

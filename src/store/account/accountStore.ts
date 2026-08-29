@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 interface AccountState {
   currentAccountId: string | null;
@@ -8,19 +11,56 @@ interface AccountState {
   clearCurrentAccount: () => void;
 }
 
-export const useAccountStore = create<AccountState>((set) => ({
-  currentAccountId: null,
-  // currentAccountId: "account-123",
-
-  setCurrentAccount: (accountId) => {
-    set({
-      currentAccountId: accountId,
-    });
+// SecureStore for native platforms, localStorage for web
+const secureStorage = {
+  getItem: async (name: string) => {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(name);
+    }
+    return await SecureStore.getItemAsync(name);
   },
 
-  clearCurrentAccount: () => {
-    set({
+  setItem: async (name: string, value: string) => {
+    if (Platform.OS === "web") {
+      localStorage.setItem(name, value);
+      return;
+    }
+    await SecureStore.setItemAsync(name, value);
+  },
+
+  removeItem: async (name: string) => {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(name);
+      return;
+    }
+    await SecureStore.deleteItemAsync(name);
+  },
+};
+
+export const useAccountStore = create<AccountState>()(
+  persist(
+    (set) => ({
       currentAccountId: null,
-    });
-  },
-}));
+
+      setCurrentAccount: (accountId) => {
+        set({
+          currentAccountId: accountId,
+        });
+      },
+
+      clearCurrentAccount: () => {
+        set({
+          currentAccountId: null,
+        });
+      },
+    }),
+
+    {
+      name: "dai-account-store",
+
+      storage: createJSONStorage(
+        () => secureStorage,
+      ),
+    },
+  ),
+);

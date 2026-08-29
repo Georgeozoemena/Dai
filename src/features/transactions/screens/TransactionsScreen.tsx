@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -34,45 +34,60 @@ export function TransactionsScreen() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadTransactions() {
-      if (!currentAccountId) {
-        setTransactions([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        const account = await getAccount(currentAccountId);
-
-        if (account) {
-          setAccountName(account.name);
-
-          if (account.currencyCode === "NGN") {
-            setCurrencySymbol("₦");
-          } else if (account.currencyCode === "USD") {
-            setCurrencySymbol("$");
-          } else if (account.currencyCode === "EUR") {
-            setCurrencySymbol("€");
-          } else {
-            setCurrencySymbol(account.currencyCode);
-          }
+  useFocusEffect(
+    useCallback(() => {
+      async function loadTransactions() {
+        if (!currentAccountId) {
+          setAccountName("");
+          setCurrencySymbol("");
+          setTransactions([]);
+          setLoading(false);
+          return;
         }
 
-        const data = await getTransactions(currentAccountId);
+        try {
+          setLoading(true);
 
-        setTransactions(data);
-      } catch (error) {
-        console.error("FAILED TO LOAD TRANSACTIONS:", error);
-      } finally {
-        setLoading(false);
+          const account = await getAccount(currentAccountId);
+
+          if (account) {
+            setAccountName(account.name);
+
+            switch (account.currencyCode) {
+              case "NGN":
+                setCurrencySymbol("₦");
+                break;
+
+              case "USD":
+                setCurrencySymbol("$");
+                break;
+
+              case "EUR":
+                setCurrencySymbol("€");
+                break;
+
+              case "GBP":
+                setCurrencySymbol("£");
+                break;
+
+              default:
+                setCurrencySymbol(account.currencyCode);
+            }
+          }
+
+          const data = await getTransactions(currentAccountId);
+
+          setTransactions(data);
+        } catch (error) {
+          console.error("FAILED TO LOAD TRANSACTIONS:", error);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
 
-    loadTransactions();
-  }, [currentAccountId]);
+      loadTransactions();
+    }, [currentAccountId]),
+  );
 
   const filteredTransactions = filterTransactions(transactions, filter);
 
