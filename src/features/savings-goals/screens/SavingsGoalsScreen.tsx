@@ -15,8 +15,12 @@ import { useAccountStore } from "../../../store/account/accountStore";
 
 import { getSavingsGoals } from "../services/savingsGoalService";
 
+import { formatCurrency } from "../../../utils/currency";
+import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+
 export function SavingsGoalsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
+  const currencyCode = useAccountCurrency();
 
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
 
@@ -251,8 +255,8 @@ export function SavingsGoalsScreen() {
                 </View>
 
                 <Text style={{ color: "#666" }}>
-                  ₦{goal.currentAmount.toLocaleString()} of ₦
-                  {goal.targetAmount.toLocaleString()}
+                  {formatCurrency(goal.currentAmount, currencyCode)} of{" "}
+                  {formatCurrency(goal.targetAmount, currencyCode)}
                 </Text>
 
                 {/* Progress Bar */}

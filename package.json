@@ -5,8 +5,10 @@
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "expo": "~57.0.14",
+    "expo-file-system": "~57.0.6",
     "expo-router": "~57.0.0",
     "expo-secure-store": "~57.0.1",
+    "expo-sharing": "~57.0.16",
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "idb": "^8.0.3",

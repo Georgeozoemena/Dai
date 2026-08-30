@@ -9,34 +9,12 @@ import {
 
 import type { Account } from "../../../types/account";
 import { createAccount } from "../../accounts/services/accountService";
+import { CURRENCIES } from "../../../constants/currencies";
 
 interface CreateAccountScreenProps {
   profileId: string;
   onComplete?: (account: Account) => void;
 }
-
-const currencies = [
-  {
-    code: "NGN",
-    name: "Nigerian Naira",
-    symbol: "₦",
-  },
-  {
-    code: "USD",
-    name: "US Dollar",
-    symbol: "$",
-  },
-  {
-    code: "EUR",
-    name: "Euro",
-    symbol: "€",
-  },
-  {
-    code: "GBP",
-    name: "British Pound",
-    symbol: "£",
-  },
-];
 
 export function CreateAccountScreen({
   profileId,
@@ -178,7 +156,7 @@ export function CreateAccountScreen({
           Currency
         </Text>
 
-        {currencies.map((currency) => {
+        {CURRENCIES.map((currency) => {
           const selected =
             currencyCode === currency.code;
 

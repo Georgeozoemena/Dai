@@ -23,10 +23,14 @@ import {
   saveWeeklyReview,
 } from "../services/weeklyReviewService";
 
+import { formatCurrency } from "../../../utils/currency";
+import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+
 export function WeeklyReviewScreen() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
 
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
+  const currencyCode = useAccountCurrency();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -303,7 +307,7 @@ export function WeeklyReviewScreen() {
                   fontWeight: "700",
                 }}
               >
-                ₦{weeklyIncome.toLocaleString()}
+                {formatCurrency(weeklyIncome, currencyCode)}
               </Text>
             </View>
 
@@ -324,7 +328,7 @@ export function WeeklyReviewScreen() {
                   fontWeight: "700",
                 }}
               >
-                ₦{weeklySpent.toLocaleString()}
+                {formatCurrency(weeklySpent, currencyCode)}
               </Text>
             </View>
 
@@ -345,7 +349,7 @@ export function WeeklyReviewScreen() {
                   fontWeight: "700",
                 }}
               >
-                ₦{weeklySaved.toLocaleString()}
+                {formatCurrency(weeklySaved, currencyCode)}
               </Text>
             </View>
 
@@ -413,7 +417,7 @@ export function WeeklyReviewScreen() {
                           fontWeight: "600",
                         }}
                       >
-                        ₦{item.amount.toLocaleString()}
+                        {formatCurrency(item.amount, currencyCode)}
                       </Text>
                     </View>
 

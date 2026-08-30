@@ -23,6 +23,11 @@ const settingsItems = [
     description: "Manage your financial accounts",
     route: "/(tabs)/accounts",
   },
+  {
+    title: "Export Transactions",
+    description: "Download your transaction history as CSV",
+    route: "/settings/export",
+  },
 ];
 
 export function SettingsScreen() {

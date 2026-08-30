@@ -121,6 +121,20 @@ export default function RootLayout() {
           title: "Settings",
         }}
       />
+
+      <Stack.Screen
+        name="settings/currency"
+        options={{
+          title: "Currency",
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/export"
+        options={{
+          title: "Export Transactions",
+        }}
+      />
     </Stack>
   );
 }

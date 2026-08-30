@@ -21,14 +21,16 @@ import {
   type TransactionFilter,
 } from "../services/transactionFilterService";
 
+import { formatCurrency } from "../../../utils/currency";
+import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+
 export function TransactionsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
+  const currencyCode = useAccountCurrency();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const [accountName, setAccountName] = useState("");
-
-  const [currencySymbol, setCurrencySymbol] = useState("");
 
   const [filter, setFilter] = useState<TransactionFilter>("all");
 
@@ -39,7 +41,6 @@ export function TransactionsScreen() {
       async function loadTransactions() {
         if (!currentAccountId) {
           setAccountName("");
-          setCurrencySymbol("");
           setTransactions([]);
           setLoading(false);
           return;
@@ -52,27 +53,6 @@ export function TransactionsScreen() {
 
           if (account) {
             setAccountName(account.name);
-
-            switch (account.currencyCode) {
-              case "NGN":
-                setCurrencySymbol("₦");
-                break;
-
-              case "USD":
-                setCurrencySymbol("$");
-                break;
-
-              case "EUR":
-                setCurrencySymbol("€");
-                break;
-
-              case "GBP":
-                setCurrencySymbol("£");
-                break;
-
-              default:
-                setCurrencySymbol(account.currencyCode);
-            }
           }
 
           const data = await getTransactions(currentAccountId);
@@ -298,8 +278,7 @@ export function TransactionsScreen() {
                     }}
                   >
                     {isExpense ? "-" : "+"}
-                    {currencySymbol}
-                    {transaction.amount.toLocaleString()}
+                    {formatCurrency(transaction.amount, currencyCode)}
                   </Text>
                 </View>
               </Pressable>

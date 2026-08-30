@@ -20,6 +20,9 @@ import {
   updateSavingsGoal,
 } from "../services/savingsGoalService";
 
+import { formatCurrency } from "../../../utils/currency";
+import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+
 interface SavingsGoalDetailScreenProps {
   goalId: string;
 }
@@ -27,6 +30,8 @@ interface SavingsGoalDetailScreenProps {
 export function SavingsGoalDetailScreen({
   goalId,
 }: SavingsGoalDetailScreenProps) {
+  const currencyCode = useAccountCurrency();
+  
   const [goal, setGoal] =
     useState<SavingsGoal | null>(null);
 
@@ -268,11 +273,11 @@ export function SavingsGoalDetailScreen({
         </Text>
 
         <Text style={{ color: "#666" }}>
-          ₦{goal.currentAmount.toLocaleString()} saved
+          {formatCurrency(goal.currentAmount, currencyCode)} saved
         </Text>
 
         <Text style={{ color: "#666" }}>
-          Target: ₦{goal.targetAmount.toLocaleString()}
+          Target: {formatCurrency(goal.targetAmount, currencyCode)}
         </Text>
 
         <View

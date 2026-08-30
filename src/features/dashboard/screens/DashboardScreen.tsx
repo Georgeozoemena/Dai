@@ -28,12 +28,14 @@ import {
 
 import { calculateBudgetCategorySummaries } from "../../budget/services/budgetCalculationService";
 
+import { formatCurrency } from "../../../utils/currency";
+import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+
 export function DashboardScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
+  const currencyCode = useAccountCurrency();
 
   const [accountName, setAccountName] = useState("");
-
-  const [currencySymbol, setCurrencySymbol] = useState("");
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -55,7 +57,6 @@ export function DashboardScreen() {
       async function loadDashboard() {
         if (!currentAccountId) {
           setAccountName("");
-          setCurrencySymbol("");
           setTransactions([]);
           setLoading(false);
           return;
@@ -68,27 +69,6 @@ export function DashboardScreen() {
 
           if (account) {
             setAccountName(account.name);
-
-            switch (account.currencyCode) {
-              case "NGN":
-                setCurrencySymbol("₦");
-                break;
-
-              case "USD":
-                setCurrencySymbol("$");
-                break;
-
-              case "EUR":
-                setCurrencySymbol("€");
-                break;
-
-              case "GBP":
-                setCurrencySymbol("£");
-                break;
-
-              default:
-                setCurrencySymbol(account.currencyCode);
-            }
           }
 
           const data = await getTransactions(currentAccountId);
@@ -327,8 +307,7 @@ export function DashboardScreen() {
             fontWeight: "700",
           }}
         >
-          {currencySymbol}
-          {summary.balance.toLocaleString()}
+          {formatCurrency(summary.balance, currencyCode)}
         </Text>
       </View>
 
@@ -363,8 +342,7 @@ export function DashboardScreen() {
               fontWeight: "700",
             }}
           >
-            {currencySymbol}
-            {summary.income.toLocaleString()}
+            {formatCurrency(summary.income, currencyCode)}
           </Text>
         </View>
         <View
@@ -391,8 +369,7 @@ export function DashboardScreen() {
               fontWeight: "700",
             }}
           >
-            {currencySymbol}
-            {summary.expenses.toLocaleString()}
+            {formatCurrency(summary.expenses, currencyCode)}
           </Text>
         </View>
       </View>
@@ -514,11 +491,11 @@ export function DashboardScreen() {
                 color: "#eae7e7",
               }}
             >
-              ₦{budgetHealth.totalSpent.toLocaleString()} spent
+              {formatCurrency(budgetHealth.totalSpent, currencyCode)} spent
             </Text>
 
             <Text style={{ color: "#666" }}>
-              of ₦{budgetHealth.totalBudget.toLocaleString()}
+              of {formatCurrency(budgetHealth.totalBudget, currencyCode)}
             </Text>
 
             {/* Progress Bar */}
@@ -688,8 +665,8 @@ export function DashboardScreen() {
                         color: isExpense ? "#d00" : "#1a9c4b",
                       }}
                     >
-                      {isExpense ? "-" : "+"}₦
-                      {transaction.amount.toLocaleString()}
+                      {isExpense ? "-" : "+"}
+                      {formatCurrency(transaction.amount, currencyCode)}
                     </Text>
                   </View>
                 </Pressable>
