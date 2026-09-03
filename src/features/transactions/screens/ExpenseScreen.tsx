@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router, useNavigation } from "expo-router";
 import {
   Pressable,
   ScrollView,
@@ -7,6 +8,7 @@ import {
   View,
   Modal,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 
 import { AmountInput } from "../components/AmountInput";
@@ -22,6 +24,14 @@ import { getProfile } from "../../onboarding/services/profileService";
 
 import { createExpense } from "../services/expenseService";
 import { getTransactions } from "../services/transactionService";
+import { colors, screenStyles } from "../../../theme";
+
+interface PendingExpense {
+  amount: number;
+  category: string;
+  description?: string;
+  date: string;
+}
 
 export function ExpenseScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -37,6 +47,8 @@ export function ExpenseScreen() {
   const [currentAccount, setCurrentAccountData] = useState<Account | null>(
     null,
   );
+  const [pendingExpenses, setPendingExpenses] = useState<PendingExpense[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -80,6 +92,55 @@ export function ExpenseScreen() {
     loadAccount();
   }, [currentAccountId]);
 
+  // Intercept Stack header back button
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      const hasUnsavedExpenses =
+        pendingExpenses.length > 0 ||
+        amount ||
+        category ||
+        description;
+
+      // If no unsaved data, allow navigation
+      if (!hasUnsavedExpenses) {
+        return;
+      }
+
+      // Prevent default navigation
+      e.preventDefault();
+
+      // Show confirmation dialog
+      Alert.alert(
+        "Discard expenses?",
+        "You have unsaved expense information. Are you sure you want to leave?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Discard & Leave",
+            style: "destructive",
+            onPress: () => {
+              // Clear all data
+              setPendingExpenses([]);
+              setAmount("");
+              setCategory(null);
+              setDescription("");
+
+              // Allow navigation to proceed
+              navigation.dispatch(e.data.action);
+            },
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, pendingExpenses, amount, category, description]);
+
   const validateForm = () => {
     if (!currentAccountId) {
       return "Please select an account.";
@@ -102,89 +163,151 @@ export function ExpenseScreen() {
     return null;
   };
 
-  const handleSubmit = async () => {
-    const error = validateForm();
+  const validateCurrentExpense = () => {
+    if (!amount) {
+      return "Please enter an amount.";
+    }
+
+    const numericAmount = Number(amount);
+
+    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+      return "Amount must be greater than 0.";
+    }
+
+    if (!category) {
+      return "Please select a category.";
+    }
+
+    return null;
+  };
+
+  const handleAddAnotherExpense = () => {
+    const error = validateCurrentExpense();
 
     if (error) {
       console.log("VALIDATION ERROR:", error);
+      return;
+    }
 
+    const newExpense: PendingExpense = {
+      amount: Number(amount),
+      category: category as string,
+      description: description.trim() || undefined,
+      date,
+    };
+
+    setPendingExpenses((currentExpenses) => [...currentExpenses, newExpense]);
+
+    // Reset the form for the next expense
+    setAmount("");
+    setCategory(null);
+    setDescription("");
+
+    console.log("EXPENSE ADDED TO LIST:", newExpense);
+  };
+
+  const handleRemoveExpense = (indexToRemove: number) => {
+    setPendingExpenses((currentExpenses) =>
+      currentExpenses.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!currentAccountId) {
+      console.log("VALIDATION ERROR: Please select an account.");
+      return;
+    }
+
+    const expensesToSave = [...pendingExpenses];
+
+    // Check whether the current form contains an expense
+    const hasCurrentExpense = amount || category || description;
+
+    if (hasCurrentExpense) {
+      const error = validateCurrentExpense();
+
+      if (error) {
+        console.log("VALIDATION ERROR:", error);
+        return;
+      }
+
+      expensesToSave.push({
+        amount: Number(amount),
+        category: category as string,
+        description: description.trim() || undefined,
+        date,
+      });
+    }
+
+    // Nothing to save
+    if (expensesToSave.length === 0) {
+      console.log("VALIDATION ERROR: Please add an expense.");
       return;
     }
 
     try {
-      const transaction = await createExpense({
-        accountId: currentAccountId,
-        amount: Number(amount),
-        category,
-        description,
-        date,
-      });
+      setLoading(true);
 
-      console.log("EXPENSE CREATED:", transaction);
+      for (const expense of expensesToSave) {
+        await createExpense({
+          accountId: currentAccountId,
+          amount: expense.amount,
+          category: expense.category,
+          description: expense.description,
+          date: expense.date,
+        });
+      }
 
-      const transactions = await getTransactions(currentAccountId);
+      console.log(`${expensesToSave.length} EXPENSE(S) SAVED SUCCESSFULLY`);
 
-      console.log("ACCOUNT TRANSACTIONS:", transactions);
+      setPendingExpenses([]);
+      setAmount("");
+      setCategory(null);
+      setDescription("");
+
+      router.back();
     } catch (error) {
-      console.error("FAILED TO CREATE EXPENSE:", error);
+      console.error("FAILED TO ADD EXPENSES:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 28,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Add Expense
-        </Text>
+        <Text style={screenStyles.title}>Add Expense</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Track where your money goes.
         </Text>
       </View>
 
       {/* Account */}
       <View>
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#666",
-          }}
-        >
+        <Text style={[screenStyles.label, { fontSize: 14, color: colors.textSecondary }]}>
           Current account
         </Text>
 
         <TouchableOpacity
           onPress={() => setShowAccountPicker(true)}
-          style={{
-            marginTop: 4,
-            padding: 12,
-            borderWidth: 1,
-            borderColor: currentAccountId ? "#ddd" : "#f00",
-            borderRadius: 12,
-            backgroundColor: "#f9f9f9",
-          }}
+          style={[
+            screenStyles.input,
+            {
+              marginTop: 4,
+              borderColor: currentAccountId ? colors.borderInput : colors.error,
+            },
+          ]}
         >
           <Text
             style={{
               fontSize: 16,
               fontWeight: "600",
-              color: currentAccountId ? "#000" : "#999",
+              color: currentAccountId ? colors.text : colors.textMuted,
             }}
           >
             {currentAccount
@@ -206,72 +329,186 @@ export function ExpenseScreen() {
 
       {/* Description */}
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Description
-        </Text>
+        <Text style={screenStyles.label}>Description</Text>
 
         <TextInput
           value={description}
           onChangeText={setDescription}
           placeholder="What did you spend on?"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Date */}
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Date
-        </Text>
+        <Text style={screenStyles.label}>Date</Text>
 
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-          }}
-        >
+        <View style={screenStyles.input}>
           <Text>{new Date(date).toLocaleDateString()}</Text>
         </View>
       </View>
 
+      {/* Add Another Expense Button */}
+      <Pressable
+        onPress={handleAddAnotherExpense}
+        style={screenStyles.outlineButton}
+      >
+        <Text style={screenStyles.outlineButtonText}>
+          + Add Another Expense
+        </Text>
+      </Pressable>
+
+      {/* Pending Expenses List */}
+      {pendingExpenses.length > 0 && (
+        <View style={screenStyles.card}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={screenStyles.sectionTitle}>
+              Expenses to Add ({pendingExpenses.length})
+            </Text>
+          </View>
+
+          {pendingExpenses.map((expense, index) => (
+            <View
+              key={index}
+              style={{
+                paddingBottom: 12,
+                borderBottomWidth:
+                  index === pendingExpenses.length - 1
+                    ? 0
+                    : 1,
+                borderBottomColor: colors.border,
+                gap: 4,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    flex: 1,
+                  }}
+                >
+                  {expense.category}
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                    }}
+                  >
+                    ₦{expense.amount.toLocaleString()}
+                  </Text>
+
+                  <Pressable
+                    onPress={() => handleRemoveExpense(index)}
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.error,
+                        fontSize: 16,
+                        fontWeight: "700",
+                      }}
+                    >
+                      ✕
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {expense.description && (
+                <Text style={{ color: colors.textSecondary }}>
+                  {expense.description}
+                </Text>
+              )}
+
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: colors.textMuted,
+                }}
+              >
+                {new Date(expense.date).toLocaleDateString()}
+              </Text>
+            </View>
+          ))}
+
+          {/* Total */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              paddingTop: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "700",
+              }}
+            >
+              Total
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+              }}
+            >
+              ₦
+              {pendingExpenses
+                .reduce(
+                  (total, expense) =>
+                    total + expense.amount,
+                  0,
+                )
+                .toLocaleString()}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Submit */}
       <Pressable
         onPress={handleSubmit}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-        }}
+        style={screenStyles.primaryButton}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Add Expense
+        <Text style={screenStyles.primaryButtonText}>
+          {loading
+            ? "Adding..."
+            : pendingExpenses.length > 0
+              ? `Add ${
+                  pendingExpenses.length + (amount && category ? 1 : 0)
+                } Expense${
+                  pendingExpenses.length + (amount && category ? 1 : 0) === 1
+                    ? ""
+                    : "s"
+                }`
+              : "Add Expense"}
         </Text>
       </Pressable>
 
@@ -285,42 +522,26 @@ export function ExpenseScreen() {
         <View
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: colors.overlay,
             justifyContent: "flex-end",
           }}
         >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              paddingTop: 20,
-              paddingBottom: 40,
-              maxHeight: "70%",
-            }}
-          >
+          <View style={screenStyles.modalSheet}>
             <View
               style={{
                 paddingHorizontal: 24,
                 paddingBottom: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#eee",
+                borderBottomColor: colors.border,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                }}
-              >
-                Select Account
-              </Text>
+              <Text style={screenStyles.sectionTitle}>Select Account</Text>
             </View>
 
             <ScrollView style={{ paddingHorizontal: 24 }}>
               {accounts.length === 0 ? (
-                <View style={{ paddingVertical: 40, alignItems: "center" }}>
-                  <Text style={{ color: "#999" }}>
+                <View style={screenStyles.emptyState}>
+                  <Text style={{ color: colors.textMuted }}>
                     No accounts found. Create one first.
                   </Text>
                 </View>
@@ -335,7 +556,7 @@ export function ExpenseScreen() {
                     style={{
                       paddingVertical: 16,
                       borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
+                      borderBottomColor: colors.border,
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -353,7 +574,7 @@ export function ExpenseScreen() {
                       <Text
                         style={{
                           fontSize: 14,
-                          color: "#666",
+                          color: colors.textSecondary,
                           marginTop: 2,
                         }}
                       >
@@ -361,7 +582,9 @@ export function ExpenseScreen() {
                       </Text>
                     </View>
                     {currentAccountId === account.id && (
-                      <Text style={{ fontSize: 20 }}>✓</Text>
+                      <Text style={{ fontSize: 20, color: colors.primary }}>
+                        ✓
+                      </Text>
                     )}
                   </TouchableOpacity>
                 ))
@@ -370,16 +593,9 @@ export function ExpenseScreen() {
 
             <TouchableOpacity
               onPress={() => setShowAccountPicker(false)}
-              style={{
-                marginTop: 16,
-                marginHorizontal: 24,
-                paddingVertical: 14,
-                alignItems: "center",
-                backgroundColor: "#f5f5f5",
-                borderRadius: 12,
-              }}
+              style={[screenStyles.outlineButton, { marginTop: 16, marginHorizontal: 24 }]}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>Cancel</Text>
+              <Text style={screenStyles.outlineButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

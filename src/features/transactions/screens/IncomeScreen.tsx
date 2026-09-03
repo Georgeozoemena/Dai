@@ -18,6 +18,7 @@ import {
 } from "../../accounts/services/accountService";
 import { getProfile } from "../../onboarding/services/profileService";
 import { createIncome } from "../services/incomeService";
+import { colors, screenStyles } from "../../../theme";
 
 export function IncomeScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -130,29 +131,15 @@ export function IncomeScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 28,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Add Income
-        </Text>
+        <Text style={screenStyles.title}>Add Income</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Track money coming into your account.
         </Text>
       </View>
@@ -160,31 +147,25 @@ export function IncomeScreen() {
       {/* Account */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#666",
-          }}
-        >
+        <Text style={[screenStyles.label, { fontSize: 14, color: colors.textSecondary }]}>
           Current account
         </Text>
 
         <TouchableOpacity
           onPress={() => setShowAccountPicker(true)}
-          style={{
-            marginTop: 4,
-            padding: 12,
-            borderWidth: 1,
-            borderColor: currentAccountId ? "#ddd" : "#f00",
-            borderRadius: 12,
-            backgroundColor: "#f9f9f9",
-          }}
+          style={[
+            screenStyles.input,
+            {
+              marginTop: 4,
+              borderColor: currentAccountId ? colors.borderInput : colors.error,
+            },
+          ]}
         >
           <Text
             style={{
               fontSize: 16,
               fontWeight: "600",
-              color: currentAccountId ? "#000" : "#999",
+              color: currentAccountId ? colors.text : colors.textMuted,
             }}
           >
             {currentAccount
@@ -205,102 +186,43 @@ export function IncomeScreen() {
       {/* Category */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Category
-        </Text>
+        <Text style={screenStyles.label}>Category</Text>
 
         <TextInput
           value={category}
           onChangeText={setCategory}
           placeholder="Salary, freelance, gift..."
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Description */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Description
-        </Text>
+        <Text style={screenStyles.label}>Description</Text>
 
         <TextInput
           value={description}
           onChangeText={setDescription}
           placeholder="Where did this money come from?"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Date */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Date
-        </Text>
+        <Text style={screenStyles.label}>Date</Text>
 
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-          }}
-        >
+        <View style={screenStyles.input}>
           <Text>{new Date(date).toLocaleDateString()}</Text>
         </View>
       </View>
 
       {/* Submit */}
 
-      <Pressable
-        onPress={handleSubmit}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-        }}
-      >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Add Income
-        </Text>
+      <Pressable onPress={handleSubmit} style={screenStyles.primaryButton}>
+        <Text style={screenStyles.primaryButtonText}>Add Income</Text>
       </Pressable>
 
       {/* Account Picker Modal */}
@@ -313,42 +235,26 @@ export function IncomeScreen() {
         <View
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: colors.overlay,
             justifyContent: "flex-end",
           }}
         >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              paddingTop: 20,
-              paddingBottom: 40,
-              maxHeight: "70%",
-            }}
-          >
+          <View style={screenStyles.modalSheet}>
             <View
               style={{
                 paddingHorizontal: 24,
                 paddingBottom: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#eee",
+                borderBottomColor: colors.border,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                }}
-              >
-                Select Account
-              </Text>
+              <Text style={screenStyles.sectionTitle}>Select Account</Text>
             </View>
 
             <ScrollView style={{ paddingHorizontal: 24 }}>
               {accounts.length === 0 ? (
-                <View style={{ paddingVertical: 40, alignItems: "center" }}>
-                  <Text style={{ color: "#999" }}>
+                <View style={screenStyles.emptyState}>
+                  <Text style={{ color: colors.textMuted }}>
                     No accounts found. Create one first.
                   </Text>
                 </View>
@@ -363,7 +269,7 @@ export function IncomeScreen() {
                     style={{
                       paddingVertical: 16,
                       borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
+                      borderBottomColor: colors.border,
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -381,7 +287,7 @@ export function IncomeScreen() {
                       <Text
                         style={{
                           fontSize: 14,
-                          color: "#666",
+                          color: colors.textSecondary,
                           marginTop: 2,
                         }}
                       >
@@ -389,7 +295,9 @@ export function IncomeScreen() {
                       </Text>
                     </View>
                     {currentAccountId === account.id && (
-                      <Text style={{ fontSize: 20 }}>✓</Text>
+                      <Text style={{ fontSize: 20, color: colors.primary }}>
+                        ✓
+                      </Text>
                     )}
                   </TouchableOpacity>
                 ))
@@ -398,16 +306,9 @@ export function IncomeScreen() {
 
             <TouchableOpacity
               onPress={() => setShowAccountPicker(false)}
-              style={{
-                marginTop: 16,
-                marginHorizontal: 24,
-                paddingVertical: 14,
-                alignItems: "center",
-                backgroundColor: "#f5f5f5",
-                borderRadius: 12,
-              }}
+              style={[screenStyles.outlineButton, { marginTop: 16, marginHorizontal: 24 }]}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>Cancel</Text>
+              <Text style={screenStyles.outlineButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

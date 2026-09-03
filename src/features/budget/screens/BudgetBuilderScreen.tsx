@@ -13,6 +13,7 @@ import { useAccountStore } from "../../../store/account/accountStore";
 import { createBudget, createBudgetCategory } from "../services/budgetService";
 
 import { router } from "expo-router";
+import { colors, screenStyles } from "../../../theme";
 
 export function BudgetBuilderScreen() {
   const [step, setStep] = useState(1);
@@ -143,31 +144,15 @@ export function BudgetBuilderScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Build Your Budget
-        </Text>
+        <Text style={screenStyles.title}>Build Your Budget</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
-          Step {step} of 5
-        </Text>
+        <Text style={screenStyles.subtitle}>Step {step} of 5</Text>
       </View>
 
       {/* Progress */}
@@ -175,7 +160,7 @@ export function BudgetBuilderScreen() {
       <View
         style={{
           height: 8,
-          backgroundColor: "#eee",
+          backgroundColor: colors.borderInput,
           borderRadius: 10,
           overflow: "hidden",
         }}
@@ -184,7 +169,7 @@ export function BudgetBuilderScreen() {
           style={{
             width: `${(step / 5) * 100}%`,
             height: "100%",
-            backgroundColor: "#111",
+            backgroundColor: colors.primary,
           }}
         />
       </View>
@@ -193,20 +178,11 @@ export function BudgetBuilderScreen() {
 
       {step === 1 && (
         <View style={{ gap: 16 }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: "700",
-            }}
-          >
+          <Text style={screenStyles.sectionTitle}>
             What's your monthly income?
           </Text>
 
-          <Text
-            style={{
-              color: "#666",
-            }}
-          >
+          <Text style={{ color: colors.textSecondary }}>
             Enter the amount you expect to earn this month.
           </Text>
 
@@ -215,14 +191,7 @@ export function BudgetBuilderScreen() {
             onChangeText={setMonthlyIncome}
             keyboardType="decimal-pad"
             placeholder="0.00"
-            style={{
-              borderWidth: 1,
-              borderColor: "#ddd",
-              borderRadius: 14,
-              paddingHorizontal: 16,
-              paddingVertical: 16,
-              fontSize: 20,
-            }}
+            style={[screenStyles.input, { fontSize: 20 }]}
           />
         </View>
       )}
@@ -231,20 +200,11 @@ export function BudgetBuilderScreen() {
 
       {step === 2 && (
         <View style={{ gap: 16 }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: "700",
-            }}
-          >
+          <Text style={screenStyles.sectionTitle}>
             What do you spend money on?
           </Text>
 
-          <Text
-            style={{
-              color: "#666",
-            }}
-          >
+          <Text style={{ color: colors.textSecondary }}>
             Select the categories you want to include in your budget.
           </Text>
 
@@ -262,19 +222,9 @@ export function BudgetBuilderScreen() {
                 <Pressable
                   key={category}
                   onPress={() => toggleCategory(category)}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderRadius: 20,
-                    backgroundColor: selected ? "#111" : "#eee",
-                  }}
+                  style={screenStyles.filterPill(selected)}
                 >
-                  <Text
-                    style={{
-                      color: selected ? "#fff" : "#111",
-                      fontWeight: "600",
-                    }}
-                  >
+                  <Text style={screenStyles.filterPillText(selected)}>
                     {category}
                   </Text>
                 </Pressable>
@@ -288,25 +238,16 @@ export function BudgetBuilderScreen() {
 
       {step === 3 && (
         <View style={{ gap: 16 }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: "700",
-            }}
-          >
+          <Text style={screenStyles.sectionTitle}>
             Set your category budgets
           </Text>
 
-          <Text style={{ color: "#666" }}>
+          <Text style={{ color: colors.textSecondary }}>
             Decide how much you want to spend in each category this month.
           </Text>
 
           {selectedCategories.length === 0 ? (
-            <Text
-              style={{
-                color: "#d00",
-              }}
-            >
+            <Text style={{ color: colors.error }}>
               You haven't selected any categories. Go back and select at least
               one.
             </Text>
@@ -314,22 +255,9 @@ export function BudgetBuilderScreen() {
             selectedCategories.map((category) => (
               <View
                 key={category}
-                style={{
-                  gap: 8,
-                  padding: 16,
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  borderRadius: 14,
-                }}
+                style={[screenStyles.card, { gap: 8 }]}
               >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {category}
-                </Text>
+                <Text style={screenStyles.label}>{category}</Text>
 
                 <TextInput
                   value={categoryAmounts[category] ?? ""}
@@ -341,14 +269,7 @@ export function BudgetBuilderScreen() {
                   }
                   keyboardType="decimal-pad"
                   placeholder="Enter amount"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#ddd",
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    fontSize: 16,
-                  }}
+                  style={screenStyles.input}
                 />
               </View>
             ))
@@ -361,41 +282,26 @@ export function BudgetBuilderScreen() {
       {step === 4 && (
         <View style={{ gap: 20 }}>
           <View>
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: "700",
-              }}
-            >
+            <Text style={screenStyles.sectionTitle}>
               Review your budget
             </Text>
 
-            <Text
-              style={{
-                marginTop: 6,
-                color: "#666",
-              }}
-            >
+            <Text style={screenStyles.subtitle}>
               Here's how your money is planned for this month.
             </Text>
           </View>
 
           {/* Income */}
 
-          <View
-            style={{
-              padding: 18,
-              borderRadius: 14,
-              backgroundColor: "#f5f5f5",
-            }}
-          >
-            <Text style={{ color: "#666" }}>Monthly Income</Text>
+          <View style={screenStyles.card}>
+            <Text style={{ color: colors.textSecondary }}>Monthly Income</Text>
 
             <Text
               style={{
                 marginTop: 6,
                 fontSize: 24,
                 fontWeight: "700",
+                color: colors.text,
               }}
             >
               ₦{income.toLocaleString()}
@@ -405,72 +311,55 @@ export function BudgetBuilderScreen() {
           {/* Categories */}
 
           <View style={{ gap: 12 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-              }}
-            >
-              Your Budget
-            </Text>
+            <Text style={screenStyles.sectionTitle}>Your Budget</Text>
 
-            {selectedCategories.map((category) => {
-              const amount = Number(categoryAmounts[category]) || 0;
+            <View style={screenStyles.listCard}>
+              {selectedCategories.map((category, index) => {
+                const amount = Number(categoryAmounts[category]) || 0;
+                const isLast = index === selectedCategories.length - 1;
 
-              return (
-                <View
-                  key={category}
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    paddingVertical: 12,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#eee",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 16,
-                    }}
+                return (
+                  <View
+                    key={category}
+                    style={[
+                      screenStyles.listItem(isLast),
+                      { justifyContent: "space-between" },
+                    ]}
                   >
-                    {category}
-                  </Text>
+                    <Text style={{ fontSize: 16, color: colors.text }}>
+                      {category}
+                    </Text>
 
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "600",
-                    }}
-                  >
-                    ₦{amount.toLocaleString()}
-                  </Text>
-                </View>
-              );
-            })}
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: colors.text,
+                      }}
+                    >
+                      ₦{amount.toLocaleString()}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
 
           {/* Summary */}
 
-          <View
-            style={{
-              gap: 14,
-              padding: 18,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: "#ddd",
-            }}
-          >
+          <View style={[screenStyles.card, { gap: 14 }]}>
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
               }}
             >
-              <Text>Total Budgeted</Text>
+              <Text style={{ color: colors.text }}>Total Budgeted</Text>
 
               <Text
                 style={{
                   fontWeight: "700",
+                  color: colors.text,
                 }}
               >
                 ₦{totalBudgeted.toLocaleString()}
@@ -483,12 +372,12 @@ export function BudgetBuilderScreen() {
                 justifyContent: "space-between",
               }}
             >
-              <Text>Remaining</Text>
+              <Text style={{ color: colors.text }}>Remaining</Text>
 
               <Text
                 style={{
                   fontWeight: "700",
-                  color: remainingIncome < 0 ? "#d00" : "#111",
+                  color: remainingIncome < 0 ? colors.error : colors.text,
                 }}
               >
                 ₦{remainingIncome.toLocaleString()}
@@ -499,7 +388,7 @@ export function BudgetBuilderScreen() {
           {remainingIncome < 0 && (
             <Text
               style={{
-                color: "#d00",
+                color: colors.error,
                 fontWeight: "600",
               }}
             >
@@ -513,16 +402,11 @@ export function BudgetBuilderScreen() {
 
       {step === 5 && (
         <View style={{ gap: 12 }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: "700",
-            }}
-          >
+          <Text style={screenStyles.sectionTitle}>
             Your budget is ready 🎉
           </Text>
 
-          <Text style={{ color: "#666" }}>
+          <Text style={{ color: colors.textSecondary }}>
             You're ready to start tracking your spending.
           </Text>
         </View>
@@ -533,7 +417,7 @@ export function BudgetBuilderScreen() {
       {error && (
         <Text
           style={{
-            color: "#d00",
+            color: colors.error,
             fontWeight: "600",
             textAlign: "center",
           }}
@@ -552,22 +436,9 @@ export function BudgetBuilderScreen() {
         {step > 1 ? (
           <Pressable
             onPress={previousStep}
-            style={{
-              flex: 1,
-              paddingVertical: 16,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: "#ddd",
-              alignItems: "center",
-            }}
+            style={[screenStyles.outlineButton, { flex: 1 }]}
           >
-            <Text
-              style={{
-                fontWeight: "600",
-              }}
-            >
-              Back
-            </Text>
+            <Text style={screenStyles.outlineButtonText}>Back</Text>
           </Pressable>
         ) : (
           <View style={{ flex: 1 }} />
@@ -577,24 +448,15 @@ export function BudgetBuilderScreen() {
           <Pressable
             onPress={step === 4 ? handleCreateBudget : nextStep}
             disabled={saving}
-            style={{
-              flex: 1,
-              paddingVertical: 16,
-              borderRadius: 14,
-              backgroundColor: "#111",
-              alignItems: "center",
-              opacity: saving ? 0.5 : 1,
-            }}
+            style={[
+              screenStyles.primaryButton,
+              { flex: 1, opacity: saving ? 0.5 : 1 },
+            ]}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.primary} />
             ) : (
-              <Text
-                style={{
-                  color: "#fff",
-                  fontWeight: "600",
-                }}
-              >
+              <Text style={screenStyles.primaryButtonText}>
                 {step === 4 ? "Create Budget" : "Continue"}
               </Text>
             )}

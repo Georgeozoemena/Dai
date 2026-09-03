@@ -1,11 +1,16 @@
 import { router } from "expo-router";
 
 import {
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+
+import { logoutUser } from "../../auth/services/logoutService";
+import { colors, screenStyles } from "../../../theme";
 
 const settingsItems = [
   {
@@ -31,29 +36,71 @@ const settingsItems = [
 ];
 
 export function SettingsScreen() {
+  const handleLogout = async () => {
+    console.log("🔴 Logout button pressed");
+    
+    // For web, use window.confirm; for native use Alert
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "Log out?\n\nYou'll need to sign in with Google again to access Dai."
+      );
+      
+      if (!confirmed) {
+        console.log("Logout cancelled");
+        return;
+      }
+      
+      console.log("🔴 User confirmed logout");
+      try {
+        await logoutUser();
+        console.log("🔴 Navigating to login...");
+        router.replace("/login");
+      } catch (error) {
+        console.error("LOGOUT FAILED:", error);
+        window.alert("Logout failed. Please try again.");
+      }
+    } else {
+      Alert.alert(
+        "Log out?",
+        "You'll need to sign in with Google again to access Dai.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => console.log("Logout cancelled"),
+          },
+          {
+            text: "Log out",
+            style: "destructive",
+            onPress: async () => {
+              console.log("🔴 User confirmed logout");
+              try {
+                await logoutUser();
+                console.log("🔴 Navigating to login...");
+                router.replace("/login");
+              } catch (error) {
+                console.error("LOGOUT FAILED:", error);
+                Alert.alert(
+                  "Logout Failed",
+                  "There was an error logging out. Please try again.",
+                );
+              }
+            },
+          },
+        ],
+      );
+    }
+  };
+
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Settings
-        </Text>
+        <Text style={screenStyles.title}>Settings</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Manage your Dai preferences.
         </Text>
       </View>
@@ -65,30 +112,15 @@ export function SettingsScreen() {
             onPress={() =>
               router.push(item.route as any)
             }
-            style={{
-              borderWidth: 1,
-              borderColor: "#ddd",
-              borderRadius: 16,
-              padding: 18,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
+            style={screenStyles.settingsRow}
           >
             <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 17,
-                  fontWeight: "700",
-                }}
-              >
-                {item.title}
-              </Text>
+              <Text style={screenStyles.label}>{item.title}</Text>
 
               <Text
                 style={{
                   marginTop: 4,
-                  color: "#666",
+                  color: colors.textSecondary,
                 }}
               >
                 {item.description}
@@ -98,7 +130,7 @@ export function SettingsScreen() {
             <Text
               style={{
                 fontSize: 22,
-                color: "#999",
+                color: colors.textMuted,
               }}
             >
               ›
@@ -107,15 +139,36 @@ export function SettingsScreen() {
         ))}
       </View>
 
+      <Pressable
+        onPress={handleLogout}
+        style={{
+          marginTop: 32,
+          paddingVertical: 16,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.error,
+          alignItems: "center",
+          backgroundColor: colors.surface,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: "700",
+            color: colors.error,
+          }}
+        >
+          Log Out
+        </Text>
+      </Pressable>
+
       <View
         style={{
           marginTop: 20,
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#999" }}>
-          Dai V1
-        </Text>
+        <Text style={{ color: colors.textMuted }}>Dai V1</Text>
       </View>
     </ScrollView>
   );

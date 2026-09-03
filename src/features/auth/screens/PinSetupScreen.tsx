@@ -7,6 +7,8 @@ import {
 } from "react-native";
 
 import { setPin } from "../services/pinService";
+import { requireCurrentUserId } from "../services/currentUserService";
+import { colors, screenStyles } from "../../../theme";
 
 interface PinSetupScreenProps {
   onComplete?: () => void;
@@ -54,9 +56,10 @@ export function PinSetupScreen({
       setSaving(true);
       setError("");
 
-      await setPin(pin);
+      const userId = await requireCurrentUserId();
+      await setPin(userId, pin);
 
-      console.log("PIN CREATED");
+      console.log("PIN CREATED FOR USER:", userId);
 
       if (onComplete) {
         onComplete();
@@ -73,27 +76,15 @@ export function PinSetupScreen({
     <View
       style={{
         flex: 1,
+        backgroundColor: colors.background,
         padding: 24,
         justifyContent: "center",
       }}
     >
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Create your PIN
-        </Text>
+        <Text style={screenStyles.title}>Create your PIN</Text>
 
-        <Text
-          style={{
-            color: "#666",
-            fontSize: 16,
-            lineHeight: 24,
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Create a 4-digit PIN to protect your Dai account.
         </Text>
       </View>
@@ -112,14 +103,14 @@ export function PinSetupScreen({
           secureTextEntry
           maxLength={4}
           textAlign="center"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 14,
-            paddingVertical: 16,
-            fontSize: 24,
-            letterSpacing: 12,
-          }}
+          style={[
+            screenStyles.input,
+            {
+              fontSize: 24,
+              letterSpacing: 12,
+              paddingVertical: 16,
+            },
+          ]}
         />
 
         <TextInput
@@ -130,20 +121,20 @@ export function PinSetupScreen({
           secureTextEntry
           maxLength={4}
           textAlign="center"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 14,
-            paddingVertical: 16,
-            fontSize: 24,
-            letterSpacing: 12,
-          }}
+          style={[
+            screenStyles.input,
+            {
+              fontSize: 24,
+              letterSpacing: 12,
+              paddingVertical: 16,
+            },
+          ]}
         />
 
         {error ? (
           <Text
             style={{
-              color: "#d00",
+              color: colors.error,
               textAlign: "center",
             }}
           >
@@ -154,22 +145,15 @@ export function PinSetupScreen({
         <Pressable
           onPress={handleCreatePin}
           disabled={saving}
-          style={{
-            marginTop: 8,
-            backgroundColor: "#111",
-            paddingVertical: 16,
-            borderRadius: 14,
-            alignItems: "center",
-            opacity: saving ? 0.5 : 1,
-          }}
+          style={[
+            screenStyles.primaryButton,
+            {
+              marginTop: 8,
+              opacity: saving ? 0.5 : 1,
+            },
+          ]}
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
+          <Text style={screenStyles.primaryButtonText}>
             {saving ? "Creating PIN..." : "Create PIN"}
           </Text>
         </Pressable>

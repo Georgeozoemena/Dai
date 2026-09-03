@@ -4,6 +4,7 @@ import {
   EXPENSE_CATEGORIES,
   type ExpenseCategory,
 } from "../constants/expenseCategories";
+import { screenStyles } from "../../../theme";
 
 interface CategorySelectorProps {
   value: ExpenseCategory | null;
@@ -13,14 +14,7 @@ interface CategorySelectorProps {
 export function CategorySelector({ value, onChange }: CategorySelectorProps) {
   return (
     <View style={{ gap: 12 }}>
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "600",
-        }}
-      >
-        Category
-      </Text>
+      <Text style={screenStyles.label}>Category</Text>
 
       <View
         style={{
@@ -36,19 +30,9 @@ export function CategorySelector({ value, onChange }: CategorySelectorProps) {
             <Pressable
               key={category}
               onPress={() => onChange(category)}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                borderRadius: 20,
-                backgroundColor: isSelected ? "#111" : "#f2f2f2",
-              }}
+              style={screenStyles.filterPill(isSelected)}
             >
-              <Text
-                style={{
-                  color: isSelected ? "#fff" : "#111",
-                  fontWeight: "500",
-                }}
-              >
+              <Text style={screenStyles.filterPillText(isSelected)}>
                 {category}
               </Text>
             </Pressable>

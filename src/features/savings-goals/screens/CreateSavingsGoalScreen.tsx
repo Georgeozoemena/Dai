@@ -16,6 +16,7 @@ import { useAccountStore } from "../../../store/account/accountStore";
 import {
   createSavingsGoal,
 } from "../services/savingsGoalService";
+import { screenStyles } from "../../../theme";
 
 export function CreateSavingsGoalScreen() {
   const currentAccountId = useAccountStore(
@@ -108,27 +109,13 @@ export function CreateSavingsGoalScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Create Savings Goal
-        </Text>
+        <Text style={screenStyles.title}>Create Savings Goal</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Start saving towards something
           important to you.
         </Text>
@@ -137,55 +124,27 @@ export function CreateSavingsGoalScreen() {
       {/* Goal Name */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          What are you saving for?
-        </Text>
+        <Text style={screenStyles.label}>What are you saving for?</Text>
 
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder="e.g. New Laptop"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Target Amount */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Target Amount
-        </Text>
+        <Text style={screenStyles.label}>Target Amount</Text>
 
         <TextInput
           value={targetAmount}
           onChangeText={setTargetAmount}
           placeholder="0.00"
           keyboardType="decimal-pad"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
@@ -194,21 +153,9 @@ export function CreateSavingsGoalScreen() {
       <Pressable
         onPress={handleCreateGoal}
         disabled={saving}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-          opacity: saving ? 0.5 : 1,
-        }}
+        style={[screenStyles.primaryButton, { opacity: saving ? 0.5 : 1 }]}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
+        <Text style={screenStyles.primaryButtonText}>
           {saving
             ? "Creating..."
             : "Create Goal"}

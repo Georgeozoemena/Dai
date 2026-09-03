@@ -3,10 +3,10 @@ import type { ProfileRepository } from "../repositories/profileRepository";
 import { getDatabase } from "./database";
 
 export const profileRepository: ProfileRepository = {
-  async getProfile() {
+  async getProfileByUserId(userId: string) {
     const db = await getDatabase();
 
-    const profiles = await db.getAll("profiles");
+    const profiles = await db.getAllFromIndex("profiles", "by-user-id", userId);
 
     return (profiles[0] as Profile | undefined) ?? null;
   },
@@ -23,13 +23,22 @@ export const profileRepository: ProfileRepository = {
     await db.put("profiles", profile);
   },
 
-  async deleteProfile() {
+  async deleteProfile(userId: string) {
+    const db = await getDatabase();
+
+    const profile = await this.getProfileByUserId(userId);
+
+    if (profile) {
+      await db.delete("profiles", profile.id);
+    }
+  },
+
+  // Legacy method - gets first profile (for migration compatibility)
+  async getProfile() {
     const db = await getDatabase();
 
     const profiles = await db.getAll("profiles");
 
-    for (const profile of profiles) {
-      await db.delete("profiles", profile.id as string);
-    }
+    return (profiles[0] as Profile | undefined) ?? null;
   },
 };

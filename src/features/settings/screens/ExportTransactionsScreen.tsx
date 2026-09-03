@@ -13,6 +13,7 @@ import { useAccountStore } from "../../../store/account/accountStore";
 import { getTransactions } from "../../transactions/services/transactionService";
 
 import { exportTransactionsToCsv } from "../services/exportService";
+import { colors, screenStyles } from "../../../theme";
 
 export function ExportTransactionsScreen() {
   const currentAccountId = useAccountStore(
@@ -74,89 +75,37 @@ export function ExportTransactionsScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Export Transactions
-        </Text>
+        <Text style={screenStyles.title}>Export Transactions</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-            lineHeight: 22,
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Download your transaction history as a CSV file.
         </Text>
       </View>
 
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#ddd",
-          borderRadius: 16,
-          padding: 20,
-          gap: 12,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "700",
-          }}
-        >
-          What will be exported?
-        </Text>
+      <View style={[screenStyles.card, { gap: 12 }]}>
+        <Text style={screenStyles.sectionTitle}>What will be exported?</Text>
 
-        <Text style={{ color: "#666" }}>
-          • Date
-        </Text>
+        <Text style={{ color: colors.textSecondary }}>• Date</Text>
 
-        <Text style={{ color: "#666" }}>
-          • Transaction Type
-        </Text>
+        <Text style={{ color: colors.textSecondary }}>• Transaction Type</Text>
 
-        <Text style={{ color: "#666" }}>
-          • Category
-        </Text>
+        <Text style={{ color: colors.textSecondary }}>• Category</Text>
 
-        <Text style={{ color: "#666" }}>
-          • Description
-        </Text>
+        <Text style={{ color: colors.textSecondary }}>• Description</Text>
 
-        <Text style={{ color: "#666" }}>
-          • Amount
-        </Text>
+        <Text style={{ color: colors.textSecondary }}>• Amount</Text>
       </View>
 
       <Pressable
         onPress={handleExport}
         disabled={exporting}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-          opacity: exporting ? 0.5 : 1,
-        }}
+        style={[screenStyles.primaryButton, { opacity: exporting ? 0.5 : 1 }]}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
+        <Text style={screenStyles.primaryButtonText}>
           {exporting
             ? "Exporting..."
             : "Export Transactions as CSV"}

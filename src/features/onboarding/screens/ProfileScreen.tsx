@@ -10,6 +10,8 @@ import {
 import type { Profile } from "../../../types/profile";
 
 import { createProfile } from "../services/profileService";
+import { requireCurrentUserId } from "../../auth/services/currentUserService";
+import { screenStyles } from "../../../theme";
 
 interface ProfileScreenProps {
   onComplete?: (profile: Profile) => void;
@@ -43,10 +45,12 @@ export function ProfileScreen({
     try {
       setSaving(true);
 
+      const userId = await requireCurrentUserId();
       const now = new Date().toISOString();
 
       const profile: Profile = {
         id: crypto.randomUUID(),
+        userId, // Link to authenticated Google user
 
         name: name.trim(),
 
@@ -60,7 +64,7 @@ export function ProfileScreen({
 
       await createProfile(profile);
 
-      console.log("PROFILE CREATED:", profile);
+      console.log("PROFILE CREATED FOR USER:", userId, profile);
 
       if (onComplete) {
         onComplete(profile);
@@ -77,30 +81,15 @@ export function ProfileScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Create Your Profile
-        </Text>
+        <Text style={screenStyles.title}>Create Your Profile</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-            lineHeight: 22,
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Tell us a little about yourself
           so we can personalize your Dai
           experience.
@@ -110,42 +99,21 @@ export function ProfileScreen({
       {/* Name */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Name
-        </Text>
+        <Text style={screenStyles.label}>Name</Text>
 
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder="Your name"
           autoCapitalize="words"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Email */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Email
-        </Text>
+        <Text style={screenStyles.label}>Email</Text>
 
         <TextInput
           value={email}
@@ -153,42 +121,21 @@ export function ProfileScreen({
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Phone */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Phone
-        </Text>
+        <Text style={screenStyles.label}>Phone</Text>
 
         <TextInput
           value={phone}
           onChangeText={setPhone}
           placeholder="Phone number"
           keyboardType="phone-pad"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
@@ -197,21 +144,12 @@ export function ProfileScreen({
       <Pressable
         onPress={handleSubmit}
         disabled={saving}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-          opacity: saving ? 0.5 : 1,
-        }}
+        style={[
+          screenStyles.primaryButton,
+          { opacity: saving ? 0.5 : 1 },
+        ]}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
+        <Text style={screenStyles.primaryButtonText}>
           {saving
             ? "Creating Profile..."
             : "Continue"}

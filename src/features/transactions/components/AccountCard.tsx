@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { Account } from "../../../types/account";
 
 import { getAccountBalance } from "../services/accountBalanceService";
+import { colors, radii } from "../../../theme";
 
 interface AccountCardProps {
   account: Account;
@@ -50,11 +51,11 @@ export function AccountCard({ account, selected, onPress }: AccountCardProps) {
     <Pressable
       onPress={onPress}
       style={{
-        borderWidth: 1,
-        borderColor: selected ? "#111" : "#ddd",
-        borderRadius: 16,
+        borderWidth: selected ? 2 : 1,
+        borderColor: selected ? colors.secondary : colors.borderInput,
+        borderRadius: radii.lg,
         padding: 20,
-        backgroundColor: selected ? "#f5f5f5" : "#fff",
+        backgroundColor: colors.surface,
       }}
     >
       {/* Account information */}
@@ -67,10 +68,10 @@ export function AccountCard({ account, selected, onPress }: AccountCardProps) {
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Ionicons 
-            name={selected ? "wallet" : "wallet-outline"} 
-            size={24} 
-            color={selected ? "#111" : "#666"} 
+          <Ionicons
+            name={selected ? "wallet" : "wallet-outline"}
+            size={24}
+            color={selected ? colors.primary : colors.textSecondary}
           />
           <View>
             <Text
@@ -85,7 +86,7 @@ export function AccountCard({ account, selected, onPress }: AccountCardProps) {
             <Text
               style={{
                 marginTop: 4,
-                color: "#666",
+                color: colors.textSecondary,
               }}
             >
               {account.currencyCode}
@@ -95,12 +96,12 @@ export function AccountCard({ account, selected, onPress }: AccountCardProps) {
 
         {selected && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Ionicons name="checkmark-circle" size={20} color="#4caf50" />
+            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
             <Text
               style={{
                 fontSize: 13,
                 fontWeight: "600",
-                color: "#4caf50",
+                color: colors.primary,
               }}
             >
               Active
@@ -119,7 +120,7 @@ export function AccountCard({ account, selected, onPress }: AccountCardProps) {
         <Text
           style={{
             fontSize: 13,
-            color: "#666",
+            color: colors.textSecondary,
           }}
         >
           Balance

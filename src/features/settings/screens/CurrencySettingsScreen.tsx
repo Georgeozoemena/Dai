@@ -14,6 +14,7 @@ import { useAccountStore } from "../../../store/account/accountStore";
 import { CURRENCIES } from "../../../constants/currencies";
 import { getAccount, updateAccount } from "../../accounts/services/accountService";
 import type { Account } from "../../../types/account";
+import { colors, screenStyles } from "../../../theme";
 
 export function CurrencySettingsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -50,30 +51,19 @@ export function CurrencySettingsScreen() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
-        <Text style={{ marginTop: 12 }}>Loading...</Text>
+      <View style={screenStyles.centered}>
+        <ActivityIndicator color={colors.secondary} />
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Loading...
+        </Text>
       </View>
     );
   }
 
   if (!currentAccount) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text style={{ color: "#666", textAlign: "center" }}>
+      <View style={screenStyles.centered}>
+        <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
           No account selected
         </Text>
       </View>
@@ -129,28 +119,13 @@ export function CurrencySettingsScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "700",
-          }}
-        >
-          Currency Settings
-        </Text>
+        <Text style={screenStyles.title}>Currency Settings</Text>
 
-        <Text
-          style={{
-            marginTop: 8,
-            fontSize: 15,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Choose the currency for "{currentAccount.name}"
         </Text>
       </View>
@@ -168,10 +143,10 @@ export function CurrencySettingsScreen() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 borderWidth: 2,
-                borderColor: isSelected ? "#111" : "#ddd",
+                borderColor: isSelected ? colors.secondary : colors.borderInput,
                 borderRadius: 14,
                 padding: 16,
-                backgroundColor: isSelected ? "#f9f9f9" : "#fff",
+                backgroundColor: isSelected ? `${colors.primary}20` : colors.surface,
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -188,6 +163,7 @@ export function CurrencySettingsScreen() {
                     style={{
                       fontSize: 17,
                       fontWeight: isSelected ? "700" : "600",
+                      color: colors.text,
                     }}
                   >
                     {currency.code}
@@ -197,7 +173,7 @@ export function CurrencySettingsScreen() {
                     style={{
                       marginTop: 2,
                       fontSize: 14,
-                      color: "#666",
+                      color: colors.textSecondary,
                     }}
                   >
                     {currency.name}
@@ -206,7 +182,7 @@ export function CurrencySettingsScreen() {
               </View>
 
               {isSelected && (
-                <Ionicons name="checkmark-circle" size={24} color="#111" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.secondary} />
               )}
             </Pressable>
           );
@@ -217,41 +193,21 @@ export function CurrencySettingsScreen() {
         <Pressable
           onPress={handleSave}
           disabled={saving}
-          style={{
-            backgroundColor: saving ? "#ccc" : "#111",
-            borderRadius: 14,
-            padding: 18,
-            alignItems: "center",
-          }}
+          style={[screenStyles.primaryButton, { opacity: saving ? 0.5 : 1 }]}
         >
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.primary} />
           ) : (
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "700",
-                color: "#fff",
-              }}
-            >
-              Save Changes
-            </Text>
+            <Text style={screenStyles.primaryButtonText}>Save Changes</Text>
           )}
         </Pressable>
       )}
 
-      <View
-        style={{
-          marginTop: 12,
-          padding: 16,
-          backgroundColor: "#f9f9f9",
-          borderRadius: 12,
-        }}
-      >
+      <View style={screenStyles.card}>
         <Text
           style={{
             fontSize: 14,
-            color: "#666",
+            color: colors.textSecondary,
             lineHeight: 20,
           }}
         >

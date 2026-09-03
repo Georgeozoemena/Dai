@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.dai.finance",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -26,7 +27,13 @@
     "plugins": [
       "expo-sqlite",
       "expo-secure-store",
-      "expo-sharing"
-    ]
+      "expo-sharing",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "39f95537-c3b5-44f3-b790-f09203768ffc"
+      }
+    }
   }
 }

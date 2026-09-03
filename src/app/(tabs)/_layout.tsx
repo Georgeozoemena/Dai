@@ -1,18 +1,54 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
+
+import { colors } from "../../theme";
+
+const SECONDARY = colors.secondary;
+const INACTIVE = colors.textMuted;
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+function TabIcon({
+  focused,
+  size,
+  activeIcon,
+  inactiveIcon,
+}: {
+  focused: boolean;
+  size: number;
+  activeIcon: IoniconName;
+  inactiveIcon: IoniconName;
+}) {
+  return (
+    <Ionicons
+      name={focused ? activeIcon : inactiveIcon}
+      size={size}
+      color={focused ? SECONDARY : INACTIVE}
+    />
+  );
+}
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: "#fff",
-          borderTopWidth: 1,
-          borderTopColor: "#e0e0e0",
-          height: 60,
+          backgroundColor: colors.surface,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
-        tabBarActiveTintColor: "#111",
-        tabBarInactiveTintColor: "#999",
+        tabBarActiveTintColor: SECONDARY,
+        tabBarInactiveTintColor: INACTIVE,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+          marginTop: 2,
+        },
       }}
     >
       <Tabs.Screen
@@ -20,8 +56,13 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon
+              focused={focused}
+              size={size}
+              activeIcon="home"
+              inactiveIcon="home-outline"
+            />
           ),
         }}
       />
@@ -31,8 +72,13 @@ export default function TabsLayout() {
         options={{
           title: "Accounts",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="wallet" size={size} color={color} />
+          tabBarIcon: ({ size, focused }) => (
+            <TabIcon
+              focused={focused}
+              size={size}
+              activeIcon="wallet"
+              inactiveIcon="wallet-outline"
+            />
           ),
         }}
       />
@@ -42,8 +88,13 @@ export default function TabsLayout() {
         options={{
           title: "Activity",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+          tabBarIcon: ({ size, focused }) => (
+            <TabIcon
+              focused={focused}
+              size={size}
+              activeIcon="list"
+              inactiveIcon="list-outline"
+            />
           ),
         }}
       />
@@ -52,8 +103,13 @@ export default function TabsLayout() {
         options={{
           title: "Weekly",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
+          tabBarIcon: ({ size, focused }) => (
+            <TabIcon
+              focused={focused}
+              size={size}
+              activeIcon="calendar"
+              inactiveIcon="calendar-outline"
+            />
           ),
         }}
       />
@@ -62,8 +118,13 @@ export default function TabsLayout() {
         options={{
           title: "Budget",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="create" size={size} color={color} />
+          tabBarIcon: ({ size, focused }) => (
+            <TabIcon
+              focused={focused}
+              size={size}
+              activeIcon="pie-chart"
+              inactiveIcon="pie-chart-outline"
+            />
           ),
         }}
       />

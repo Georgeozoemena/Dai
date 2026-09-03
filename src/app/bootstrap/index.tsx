@@ -3,13 +3,14 @@ import { router } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 import { getProfile } from "../../features/onboarding/services/profileService";
-import { getAccounts } from "../../features/accounts/services/accountService";
-import { useAccountStore } from "../../store/account/accountStore";
 import { hasPin } from "../../features/auth/services/pinService";
+import { getStoredAuth } from "../../features/auth/services/authStorage";
+import { useAuthStore } from "../../store/auth/authStore";
+import { colors, screenStyles } from "../../theme";
 
 export default function BootstrapScreen() {
-  const currentAccountId = useAccountStore(
-    (state) => state.currentAccountId,
+  const setAuth = useAuthStore(
+    (state) => state.setAuth,
   );
 
   useEffect(() => {
@@ -17,51 +18,63 @@ export default function BootstrapScreen() {
       try {
         console.log("========== BOOTSTRAP START ==========");
 
+        // 1. Restore authentication
+        const storedAuth = await getStoredAuth();
+
+        if (!storedAuth) {
+          console.log("STATE → UNAUTHENTICATED");
+
+          router.replace("/login");
+          return;
+        }
+
+        const { user, token } = storedAuth;
+
+        setAuth(user, token);
+
+        console.log(
+          "STATE → AUTHENTICATED",
+          user.email,
+        );
+
+        // 2. Check this user's local profile
         const profile = await getProfile();
 
-        console.log("PROFILE:", profile);
-
         if (!profile) {
-          console.log("NO PROFILE → ONBOARDING");
+          console.log("STATE → NEW USER");
+
           router.replace("/onboarding");
           return;
         }
 
-        // Check if PIN exists
-        const pinExists = await hasPin();
-
-        console.log("PIN EXISTS:", pinExists);
+        // 3. Check this user's PIN
+        const pinExists = await hasPin(user.id);
 
         if (!pinExists) {
-          console.log("NO PIN → PIN SETUP");
+          console.log("STATE → PIN SETUP");
+
           router.replace("/pin-setup");
           return;
         }
 
-        // PIN exists, show PIN lock screen
-        console.log("PIN EXISTS → PIN LOCK");
+        // 4. Existing user with PIN
+        console.log("STATE → LOCKED");
+
         router.replace("/pin-lock");
       } catch (error) {
         console.error("BOOTSTRAP FAILED:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
-        
-        // If database error, try to continue to onboarding
-        router.replace("/onboarding");
+
+        // Never assume an error means a new user.
+        router.replace("/login");
       }
     }
 
     bootstrap();
-  }, [currentAccountId]);
+  }, [setAuth]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <ActivityIndicator size="large" />
+    <View style={screenStyles.centered}>
+      <ActivityIndicator size="large" color={colors.secondary} />
     </View>
   );
 }

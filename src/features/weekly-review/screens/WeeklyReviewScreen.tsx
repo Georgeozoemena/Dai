@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 
-import { Pressable, ScrollView, Text, View, TextInput } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  TextInput,
+} from "react-native";
 
 import {
   formatWeekRange,
@@ -25,6 +32,7 @@ import {
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+import { colors, screenStyles } from "../../../theme";
 
 export function WeeklyReviewScreen() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
@@ -189,29 +197,15 @@ export function WeeklyReviewScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Weekly Review
-        </Text>
+        <Text style={screenStyles.title}>Weekly Review</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Take a moment to understand your financial week.
         </Text>
       </View>
@@ -236,6 +230,7 @@ export function WeeklyReviewScreen() {
             style={{
               fontSize: 16,
               fontWeight: "600",
+              color: colors.text,
             }}
           >
             ← Previous
@@ -247,6 +242,7 @@ export function WeeklyReviewScreen() {
             fontSize: 15,
             fontWeight: "600",
             textAlign: "center",
+            color: colors.text,
           }}
         >
           {formatWeekRange(weekStart, weekEnd)}
@@ -263,6 +259,7 @@ export function WeeklyReviewScreen() {
             style={{
               fontSize: 16,
               fontWeight: "600",
+              color: colors.text,
             }}
           >
             Next →
@@ -273,101 +270,75 @@ export function WeeklyReviewScreen() {
       {/* Placeholder */}
 
       <View style={{ gap: 12 }}>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          This Week
-        </Text>
+        <Text style={screenStyles.sectionTitle}>This Week</Text>
 
         {loading ? (
-          <Text style={{ color: "#666" }}>Loading weekly summary...</Text>
+          <View style={{ alignItems: "center", paddingVertical: 20 }}>
+            <ActivityIndicator color={colors.secondary} />
+            <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+              Loading weekly summary...
+            </Text>
+          </View>
         ) : (
           <View
             style={{
               gap: 12,
             }}
           >
-            <View
-              style={{
-                padding: 18,
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 16,
-              }}
-            >
-              <Text style={{ color: "#666" }}>Income</Text>
+            <View style={screenStyles.card}>
+              <Text style={{ color: colors.textSecondary }}>Income</Text>
 
               <Text
                 style={{
                   marginTop: 6,
                   fontSize: 22,
                   fontWeight: "700",
+                  color: colors.success,
                 }}
               >
                 {formatCurrency(weeklyIncome, currencyCode)}
               </Text>
             </View>
 
-            <View
-              style={{
-                padding: 18,
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 16,
-              }}
-            >
-              <Text style={{ color: "#666" }}>Spent</Text>
+            <View style={screenStyles.card}>
+              <Text style={{ color: colors.textSecondary }}>Spent</Text>
 
               <Text
                 style={{
                   marginTop: 6,
                   fontSize: 22,
                   fontWeight: "700",
+                  color: colors.text,
                 }}
               >
                 {formatCurrency(weeklySpent, currencyCode)}
               </Text>
             </View>
 
-            <View
-              style={{
-                padding: 18,
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 16,
-              }}
-            >
-              <Text style={{ color: "#666" }}>Saved</Text>
+            <View style={screenStyles.card}>
+              <Text style={{ color: colors.textSecondary }}>Saved</Text>
 
               <Text
                 style={{
                   marginTop: 6,
                   fontSize: 22,
                   fontWeight: "700",
+                  color: colors.text,
                 }}
               >
                 {formatCurrency(weeklySaved, currencyCode)}
               </Text>
             </View>
 
-            <View
-              style={{
-                padding: 18,
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 16,
-              }}
-            >
-              <Text style={{ color: "#666" }}>Entries</Text>
+            <View style={screenStyles.card}>
+              <Text style={{ color: colors.textSecondary }}>Entries</Text>
 
               <Text
                 style={{
                   marginTop: 6,
                   fontSize: 22,
                   fontWeight: "700",
+                  color: colors.text,
                 }}
               >
                 {weeklyEntries}
@@ -376,21 +347,14 @@ export function WeeklyReviewScreen() {
           </View>
         )}
         <View style={{ gap: 14 }}>
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-            }}
-          >
-            Spending by Category
-          </Text>
+          <Text style={screenStyles.sectionTitle}>Spending by Category</Text>
 
           {categorySummaries.length === 0 ? (
-            <Text style={{ color: "#666" }}>
+            <Text style={{ color: colors.textSecondary }}>
               No expenses recorded this week.
             </Text>
           ) : (
-            <View style={{ gap: 14 }}>
+            <View style={[screenStyles.card, { gap: 14 }]}>
               {categorySummaries.map((item) => {
                 const percentage =
                   weeklySpent > 0 ? (item.amount / weeklySpent) * 100 : 0;
@@ -407,6 +371,7 @@ export function WeeklyReviewScreen() {
                         style={{
                           fontSize: 16,
                           fontWeight: "600",
+                          color: colors.text,
                         }}
                       >
                         {item.category}
@@ -415,6 +380,7 @@ export function WeeklyReviewScreen() {
                       <Text
                         style={{
                           fontWeight: "600",
+                          color: colors.text,
                         }}
                       >
                         {formatCurrency(item.amount, currencyCode)}
@@ -426,7 +392,7 @@ export function WeeklyReviewScreen() {
                     <View
                       style={{
                         height: 8,
-                        backgroundColor: "#e5e5e5",
+                        backgroundColor: colors.border,
                         borderRadius: 10,
                         overflow: "hidden",
                       }}
@@ -435,7 +401,7 @@ export function WeeklyReviewScreen() {
                         style={{
                           width: `${percentage}%`,
                           height: "100%",
-                          backgroundColor: "#111",
+                          backgroundColor: colors.secondary,
                           borderRadius: 10,
                         }}
                       />
@@ -444,7 +410,7 @@ export function WeeklyReviewScreen() {
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#666",
+                        color: colors.textSecondary,
                       }}
                     >
                       {percentage.toFixed(0)}% of your weekly spending
@@ -457,19 +423,12 @@ export function WeeklyReviewScreen() {
         </View>
         <View style={{ gap: 16 }}>
           <View>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-              }}
-            >
-              Weekly Reflection
-            </Text>
+            <Text style={screenStyles.sectionTitle}>Weekly Reflection</Text>
 
             <Text
               style={{
                 marginTop: 4,
-                color: "#666",
+                color: colors.textSecondary,
               }}
             >
               Take a moment to reflect on your financial week.
@@ -479,12 +438,7 @@ export function WeeklyReviewScreen() {
           {/* Question 1 */}
 
           <View style={{ gap: 8 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
+            <Text style={screenStyles.label}>
               What went well financially this week?
             </Text>
 
@@ -493,26 +447,14 @@ export function WeeklyReviewScreen() {
               onChangeText={setReflectionOne}
               placeholder="Write your thoughts..."
               multiline
-              style={{
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 14,
-                padding: 14,
-                minHeight: 100,
-                textAlignVertical: "top",
-              }}
+              style={[screenStyles.input, screenStyles.inputMultiline]}
             />
           </View>
 
           {/* Question 2 */}
 
           <View style={{ gap: 8 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
+            <Text style={screenStyles.label}>
               What could you improve next week?
             </Text>
 
@@ -521,26 +463,14 @@ export function WeeklyReviewScreen() {
               onChangeText={setReflectionTwo}
               placeholder="Write your thoughts..."
               multiline
-              style={{
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 14,
-                padding: 14,
-                minHeight: 100,
-                textAlignVertical: "top",
-              }}
+              style={[screenStyles.input, screenStyles.inputMultiline]}
             />
           </View>
 
           {/* Question 3 */}
 
           <View style={{ gap: 8 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
+            <Text style={screenStyles.label}>
               What is one financial goal for next week?
             </Text>
 
@@ -549,14 +479,7 @@ export function WeeklyReviewScreen() {
               onChangeText={setReflectionThree}
               placeholder="Write your thoughts..."
               multiline
-              style={{
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 14,
-                padding: 14,
-                minHeight: 100,
-                textAlignVertical: "top",
-              }}
+              style={[screenStyles.input, screenStyles.inputMultiline]}
             />
           </View>
 
@@ -565,21 +488,12 @@ export function WeeklyReviewScreen() {
           <Pressable
             onPress={handleSaveReview}
             disabled={savingReview}
-            style={{
-              backgroundColor: "#111",
-              paddingVertical: 16,
-              borderRadius: 14,
-              alignItems: "center",
-              opacity: savingReview ? 0.5 : 1,
-            }}
+            style={[
+              screenStyles.primaryButton,
+              { opacity: savingReview ? 0.5 : 1 },
+            ]}
           >
-            <Text
-              style={{
-                color: "#fff",
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
+            <Text style={screenStyles.primaryButtonText}>
               {savingReview ? "Saving..." : "Save Weekly Review"}
             </Text>
           </Pressable>

@@ -10,6 +10,7 @@ import {
 import type { Account } from "../../../types/account";
 import { createAccount } from "../../accounts/services/accountService";
 import { CURRENCIES } from "../../../constants/currencies";
+import { colors, radii, screenStyles } from "../../../theme";
 
 interface CreateAccountScreenProps {
   profileId: string;
@@ -88,30 +89,15 @@ export function CreateAccountScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Create an Account
-        </Text>
+        <Text style={screenStyles.title}>Create an Account</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-            lineHeight: 22,
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Choose the account you want to
           use for your finances.
         </Text>
@@ -120,41 +106,20 @@ export function CreateAccountScreen({
       {/* Account name */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Account Name
-        </Text>
+        <Text style={screenStyles.label}>Account Name</Text>
 
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder="e.g. Personal"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Currency */}
 
       <View style={{ gap: 12 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Currency
-        </Text>
+        <Text style={screenStyles.label}>Currency</Text>
 
         {CURRENCIES.map((currency) => {
           const selected =
@@ -169,10 +134,11 @@ export function CreateAccountScreen({
               style={{
                 borderWidth: 1,
                 borderColor: selected
-                  ? "#111"
-                  : "#ddd",
-                borderRadius: 12,
+                  ? colors.secondary
+                  : colors.borderInput,
+                borderRadius: radii.sm,
                 padding: 16,
+                backgroundColor: colors.surface,
               }}
             >
               <View
@@ -188,6 +154,7 @@ export function CreateAccountScreen({
                     style={{
                       fontSize: 16,
                       fontWeight: "600",
+                      color: colors.text,
                     }}
                   >
                     {currency.code}
@@ -196,7 +163,7 @@ export function CreateAccountScreen({
                   <Text
                     style={{
                       marginTop: 4,
-                      color: "#666",
+                      color: colors.textSecondary,
                     }}
                   >
                     {currency.name}
@@ -207,6 +174,7 @@ export function CreateAccountScreen({
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
+                    color: colors.text,
                   }}
                 >
                   {currency.symbol}
@@ -222,21 +190,12 @@ export function CreateAccountScreen({
       <Pressable
         onPress={handleSubmit}
         disabled={saving}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-          opacity: saving ? 0.5 : 1,
-        }}
+        style={[
+          screenStyles.primaryButton,
+          { opacity: saving ? 0.5 : 1 },
+        ]}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
+        <Text style={screenStyles.primaryButtonText}>
           {saving
             ? "Creating Account..."
             : "Create Account"}

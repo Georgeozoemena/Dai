@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import { router, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import type { Budget, BudgetCategory } from "../types/budget";
 
@@ -21,6 +22,7 @@ import {
   calculateBudgetCategorySummaries,
   type BudgetCategorySummary,
 } from "../services/budgetCalculationService";
+import { colors, screenStyles } from "../../../theme";
 
 export function BudgetDashboardScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -83,46 +85,22 @@ export function BudgetDashboardScreen() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
+      <View style={screenStyles.centered}>
+        <ActivityIndicator color={colors.secondary} />
 
-        <Text style={{ marginTop: 12 }}>Loading budget...</Text>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Loading budget...
+        </Text>
       </View>
     );
   }
 
   if (!currentAccountId) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          No account selected
-        </Text>
+      <View style={screenStyles.centered}>
+        <Text style={screenStyles.title}>No account selected</Text>
 
-        <Text
-          style={{
-            marginTop: 8,
-            color: "#666",
-            textAlign: "center",
-          }}
-        >
+        <Text style={[screenStyles.subtitle, { textAlign: "center" }]}>
           Select an account to view your budget.
         </Text>
       </View>
@@ -131,52 +109,25 @@ export function BudgetDashboardScreen() {
 
   if (!budget) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "700",
-          }}
-        >
-          No budget yet
-        </Text>
+      <View style={screenStyles.centered}>
+        <Ionicons
+          name="calculator-outline"
+          size={64}
+          color={colors.textMuted}
+          style={{ marginBottom: 16 }}
+        />
 
-        <Text
-          style={{
-            marginTop: 8,
-            color: "#666",
-            textAlign: "center",
-          }}
-        >
+        <Text style={screenStyles.title}>No budget yet</Text>
+
+        <Text style={[screenStyles.subtitle, { textAlign: "center" }]}>
           Create a monthly budget to start tracking your spending.
         </Text>
 
         <Pressable
           onPress={() => router.push("/budget/create")}
-          style={{
-            marginTop: 24,
-            backgroundColor: "#111",
-            paddingHorizontal: 20,
-            paddingVertical: 14,
-            borderRadius: 14,
-          }}
+          style={[screenStyles.primaryButton, { marginTop: 24, paddingHorizontal: 20 }]}
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
-            Create Budget
-          </Text>
+          <Text style={screenStyles.primaryButtonText}>Create Budget</Text>
         </Pressable>
       </View>
     );
@@ -206,55 +157,30 @@ export function BudgetDashboardScreen() {
 
   const overallStatusColor =
     overallStatus === "exceeded"
-      ? "#d00"
+      ? colors.error
       : overallStatus === "warning"
-        ? "#e6a700"
-        : "#1a9c4b";
+        ? colors.warning
+        : colors.success;
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Budget
-        </Text>
+        <Text style={screenStyles.title}>Budget</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
-          Your plan for this month.
-        </Text>
+        <Text style={screenStyles.subtitle}>Your plan for this month.</Text>
       </View>
 
       {/* Overall Health Card */}
 
-      <View
-        style={{
-          padding: 20,
-          borderRadius: 18,
-          borderWidth: 1,
-          backgroundColor: "#121212",
-          borderColor: overallStatusColor,
-          gap: 14,
-        }}
-      >
+      <View style={[screenStyles.card, { gap: 14 }]}>
         <View>
           <Text
             style={{
               fontSize: 14,
-              color: "#666",
+              color: colors.textSecondary,
             }}
           >
             MONTHLY BUDGET HEALTH
@@ -283,14 +209,14 @@ export function BudgetDashboardScreen() {
           }}
         >
           <View>
-            <Text style={{ color: "#666" }}>Total Spent</Text>
+            <Text style={{ color: colors.textSecondary }}>Total Spent</Text>
 
             <Text
               style={{
                 marginTop: 4,
                 fontSize: 18,
                 fontWeight: "700",
-                color: "#fff",
+                color: colors.text,
               }}
             >
               ₦{totalSpent.toLocaleString()}
@@ -302,14 +228,14 @@ export function BudgetDashboardScreen() {
               alignItems: "flex-end",
             }}
           >
-            <Text style={{ color: "#666" }}>Remaining</Text>
+            <Text style={{ color: colors.textSecondary }}>Remaining</Text>
 
             <Text
               style={{
                 marginTop: 4,
                 fontSize: 18,
                 fontWeight: "700",
-                color: totalRemaining < 0 ? "#d00" : "#111",
+                color: totalRemaining < 0 ? colors.error : colors.text,
               }}
             >
               ₦{totalRemaining.toLocaleString()}
@@ -322,7 +248,7 @@ export function BudgetDashboardScreen() {
         <View
           style={{
             height: 10,
-            backgroundColor: "#eee",
+            backgroundColor: colors.border,
             borderRadius: 10,
             overflow: "hidden",
           }}
@@ -338,7 +264,7 @@ export function BudgetDashboardScreen() {
 
         <Text
           style={{
-            color: "#666",
+            color: colors.textSecondary,
           }}
         >
           {overallPercentage.toFixed(0)}% of your monthly budget has been used.
@@ -347,20 +273,15 @@ export function BudgetDashboardScreen() {
 
       {/* Summary */}
 
-      <View
-        style={{
-          padding: 20,
-          borderRadius: 16,
-          backgroundColor: "#f5f5f5",
-        }}
-      >
-        <Text style={{ color: "#666" }}>Total Budget</Text>
+      <View style={screenStyles.card}>
+        <Text style={{ color: colors.textSecondary }}>Total Budget</Text>
 
         <Text
           style={{
             marginTop: 6,
             fontSize: 28,
             fontWeight: "700",
+            color: colors.text,
           }}
         >
           ₦{budget.totalBudget.toLocaleString()}
@@ -369,7 +290,7 @@ export function BudgetDashboardScreen() {
         <Text
           style={{
             marginTop: 8,
-            color: "#666",
+            color: colors.textSecondary,
           }}
         >
           Monthly income: ₦{budget.totalIncome.toLocaleString()}
@@ -379,33 +300,20 @@ export function BudgetDashboardScreen() {
       {/* Categories */}
 
       <View style={{ gap: 12 }}>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          Your Categories
-        </Text>
+        <Text style={screenStyles.sectionTitle}>Your Categories</Text>
 
         {categorySummaries.map((summary) => {
           const statusColor =
             summary.status === "exceeded"
-              ? "#d00"
+              ? colors.error
               : summary.status === "warning"
-                ? "#e6a700"
-                : "#1a9c4b";
+                ? colors.warning
+                : colors.success;
 
           return (
             <View
               key={summary.categoryId}
-              style={{
-                padding: 16,
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 14,
-                gap: 12,
-              }}
+              style={[screenStyles.card, { gap: 12 }]}
             >
               <View
                 style={{
@@ -417,6 +325,7 @@ export function BudgetDashboardScreen() {
                   style={{
                     fontSize: 16,
                     fontWeight: "600",
+                    color: colors.text,
                   }}
                 >
                   {summary.category}
@@ -432,13 +341,13 @@ export function BudgetDashboardScreen() {
                 </Text>
               </View>
 
-              <Text style={{ color: "#666" }}>
+              <Text style={{ color: colors.textSecondary }}>
                 Budget: ₦{summary.budgeted.toLocaleString()}
               </Text>
 
               <Text
                 style={{
-                  color: summary.remaining < 0 ? "#d00" : "#666",
+                  color: summary.remaining < 0 ? colors.error : colors.textSecondary,
                 }}
               >
                 Remaining: ₦{summary.remaining.toLocaleString()}
@@ -447,7 +356,7 @@ export function BudgetDashboardScreen() {
               <View
                 style={{
                   height: 8,
-                  backgroundColor: "#eee",
+                  backgroundColor: colors.border,
                   borderRadius: 10,
                   overflow: "hidden",
                 }}

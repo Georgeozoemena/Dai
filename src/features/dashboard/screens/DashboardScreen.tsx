@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -30,6 +30,17 @@ import { calculateBudgetCategorySummaries } from "../../budget/services/budgetCa
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+import { colors, radii, screenStyles } from "../../../theme";
+
+const PRIMARY = colors.primary;
+const SECONDARY = colors.secondary;
+
+function formatTransactionTime(date: string) {
+  return new Date(date).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 export function DashboardScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -40,6 +51,8 @@ export function DashboardScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const [loading, setLoading] = useState(true);
+
+  const [balanceVisible, setBalanceVisible] = useState(true);
 
   const [budgetHealth, setBudgetHealth] = useState<{
     totalBudget: number;
@@ -139,33 +152,23 @@ export function DashboardScreen() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
-        <Text style={{ marginTop: 12 }}>Loading dashboard...</Text>
+      <View style={[screenStyles.centered, { padding: 24 }]}>
+        <ActivityIndicator color={SECONDARY} />
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Loading dashboard...
+        </Text>
       </View>
     );
   }
 
   if (!currentAccountId) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
+      <View style={[screenStyles.centered, { padding: 24 }]}>
         <Text
           style={{
             fontSize: 20,
             fontWeight: "700",
+            color: SECONDARY,
           }}
         >
           No account selected
@@ -174,15 +177,15 @@ export function DashboardScreen() {
           onPress={() => router.push("/(tabs)/accounts")}
           style={{
             marginTop: 20,
-            backgroundColor: "#111",
+            backgroundColor: SECONDARY,
             paddingHorizontal: 20,
             paddingVertical: 12,
-            borderRadius: 10,
+            borderRadius: 12,
           }}
         >
           <Text
             style={{
-              color: "#fff",
+              color: PRIMARY,
               fontWeight: "600",
             }}
           >
@@ -194,152 +197,237 @@ export function DashboardScreen() {
   }
 
   const summary = calculateDashboardSummary(transactions);
+  const accountIdLabel = currentAccountId.slice(0, 8).toUpperCase();
 
   return (
     <ScrollView
+      style={screenStyles.root}
       contentContainerStyle={{
-        padding: 24,
-        gap: 24,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        paddingBottom: 32,
+        gap: 28,
       }}
+      showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
+      {/* Hero Balance Card */}
       <View
         style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
+          backgroundColor: SECONDARY,
+          borderRadius: 28,
+          padding: 22,
+          overflow: "hidden",
         }}
       >
-        <View style={{ flex: 1 }}>
-          <Text
+        {/* Decorative background arches */}
+        <View
+          style={{
+            position: "absolute",
+            top: -40,
+            right: -30,
+            width: 180,
+            height: 180,
+            borderRadius: 90,
+            borderWidth: 28,
+            borderColor: "rgba(255,255,255,0.04)",
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            bottom: -60,
+            left: -40,
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+            borderWidth: 32,
+            borderColor: "rgba(255,255,255,0.03)",
+          }}
+        />
+
+        {/* Top bar */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "rgba(255,255,255,0.1)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="person-outline" size={20} color="#fff" />
+            </Pressable>
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "rgba(255,255,255,0.1)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="notifications-outline" size={20} color="#fff" />
+            </View>
+          </View>
+
+          <Pressable
+            onPress={() => router.push("/(tabs)/accounts")}
             style={{
-              fontSize: 16,
-              color: "#666",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              backgroundColor: "rgba(255,255,255,0.12)",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 20,
             }}
           >
-            Welcome back
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              ID: {accountIdLabel}
+            </Text>
+            <Ionicons name="copy-outline" size={14} color="rgba(255,255,255,0.7)" />
+          </Pressable>
+        </View>
+
+        {/* Balance */}
+        <View style={{ alignItems: "center", marginTop: 28, marginBottom: 24 }}>
+          <Pressable
+            onPress={() => setBalanceVisible((visible) => !visible)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 14,
+                fontWeight: "500",
+              }}
+            >
+              Total Balance
+            </Text>
+            <Ionicons
+              name={balanceVisible ? "eye-outline" : "eye-off-outline"}
+              size={16}
+              color="rgba(255,255,255,0.7)"
+            />
+          </Pressable>
+          <Text
+            style={{
+              marginTop: 10,
+              color: "#fff",
+              fontSize: 34,
+              fontWeight: "700",
+              letterSpacing: -0.5,
+            }}
+          >
+            {balanceVisible
+              ? formatCurrency(summary.balance, currencyCode)
+              : "••••••••"}
           </Text>
           <Text
             style={{
-              marginTop: 4,
-              fontSize: 32,
-              fontWeight: "700",
+              marginTop: 6,
+              color: "rgba(255,255,255,0.5)",
+              fontSize: 13,
+              fontWeight: "500",
             }}
           >
             {accountName}
           </Text>
         </View>
 
-        <Pressable
-          onPress={() => router.push("/settings")}
-          style={{
-            padding: 10,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#ddd",
-          }}
-        >
-          <Ionicons name="settings-outline" size={24} color="#111" />
-        </Pressable>
-      </View>
-
-      {/* Account Switcher */}
-      <Pressable
-        onPress={() => router.push("/(tabs)/accounts")}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderWidth: 1,
-          borderColor: "#ddd",
-          borderRadius: 14,
-          padding: 16,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Ionicons name="wallet-outline" size={24} color="#666" />
-          <View>
-            <Text
-              style={{
-                fontSize: 13,
-                color: "#666",
-              }}
-            >
-              Current account
-            </Text>
-            <Text
-              style={{
-                marginTop: 6,
-                fontSize: 18,
-                fontWeight: "700",
-              }}
-            >
-              {accountName}
-            </Text>
-          </View>
-        </View>
-        <Ionicons name="chevron-down" size={20} color="#666" />
-      </Pressable>
-
-      {/* Balance */}
-      <View
-        style={{
-          backgroundColor: "#111",
-          borderRadius: 18,
-          padding: 24,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Ionicons name="cash-outline" size={20} color="#aaa" />
-          <Text
+        {/* Action buttons */}
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <Pressable
+            onPress={() => router.push("/income")}
             style={{
-              color: "#aaa",
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              backgroundColor: "rgba(255,255,255,0.12)",
+              paddingVertical: 14,
+              borderRadius: 14,
             }}
           >
-            Balance
-          </Text>
+            <Ionicons name="add" size={18} color="#fff" />
+            <Text style={{ color: "#fff", fontWeight: "600", fontSize: 15 }}>
+              Income
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/expense")}
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              backgroundColor: "rgba(255,255,255,0.12)",
+              paddingVertical: 14,
+              borderRadius: 14,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600", fontSize: 15 }}>
+              Expense
+            </Text>
+            <Ionicons name="arrow-up-outline" size={16} color="#fff" />
+          </Pressable>
         </View>
-        <Text
-          style={{
-            marginTop: 8,
-            color: "#fff",
-            fontSize: 36,
-            fontWeight: "700",
-          }}
-        >
-          {formatCurrency(summary.balance, currencyCode)}
-        </Text>
       </View>
 
-      {/* Income / Expenses */}
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 12,
-        }}
-      >
+      {/* Income / Expenses summary */}
+      <View style={{ flexDirection: "row", gap: 12 }}>
         <View
           style={{
             flex: 1,
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 14,
+            backgroundColor: colors.surface,
+            borderRadius: 16,
             padding: 16,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons
-              name="arrow-down-circle-outline"
-              size={16}
-              color="#4caf50"
-            />
-            <Text style={{ color: "#666" }}>Income</Text>
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: "rgba(26,156,75,0.12)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="arrow-down" size={14} color="#1a9c4b" />
+            </View>
+            <Text style={{ color: "#888", fontSize: 13 }}>Income</Text>
           </View>
           <Text
             style={{
-              marginTop: 8,
-              fontSize: 20,
+              marginTop: 10,
+              fontSize: 18,
               fontWeight: "700",
+              color: SECONDARY,
             }}
           >
             {formatCurrency(summary.income, currencyCode)}
@@ -348,25 +436,32 @@ export function DashboardScreen() {
         <View
           style={{
             flex: 1,
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 14,
+            backgroundColor: colors.surface,
+            borderRadius: 16,
             padding: 16,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons
-              name="arrow-up-circle-outline"
-              size={16}
-              color="#f44336"
-            />
-            <Text style={{ color: "#666" }}>Expenses</Text>
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: "rgba(244,67,54,0.1)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="arrow-up" size={14} color="#f44336" />
+            </View>
+            <Text style={{ color: "#888", fontSize: 13 }}>Expenses</Text>
           </View>
           <Text
             style={{
-              marginTop: 8,
-              fontSize: 20,
+              marginTop: 10,
+              fontSize: 18,
               fontWeight: "700",
+              color: SECONDARY,
             }}
           >
             {formatCurrency(summary.expenses, currencyCode)}
@@ -376,214 +471,252 @@ export function DashboardScreen() {
 
       {/* Quick Actions */}
       <View>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-            marginBottom: 12,
-          }}
-        >
-          Quick Actions
-        </Text>
         <View
           style={{
             flexDirection: "row",
-            gap: 12,
+            justifyContent: "space-between",
           }}
         >
-          <Pressable
-            onPress={() => router.push("/expense")}
-            style={{
-              flex: 1,
-              backgroundColor: "#111",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            <Ionicons name="remove-circle-outline" size={20} color="#fff" />
-            <Text
+          {[
+            {
+              label: "Accounts",
+              icon: "wallet-outline" as const,
+              color: "#dbeafe",
+              iconColor: "#2563eb",
+              route: "/(tabs)/accounts" as const,
+            },
+            {
+              label: "Activity",
+              icon: "list-outline" as const,
+              color: "#ffedd5",
+              iconColor: "#ea580c",
+              route: "/(tabs)/activity" as const,
+            },
+            {
+              label: "Budget",
+              icon: "pie-chart-outline" as const,
+              color: "#dcfce7",
+              iconColor: "#16a34a",
+              route: "/(tabs)/budget" as const,
+            },
+            {
+              label: "Goals",
+              icon: "flag-outline" as const,
+              color: "#e0e7ff",
+              iconColor: "#4f46e5",
+              route: "/savings-goals" as const,
+            },
+          ].map((action) => (
+            <Pressable
+              key={action.label}
+              onPress={() => router.push(action.route)}
               style={{
-                color: "#fff",
-                fontWeight: "600",
-              }}
-            >
-              Expense
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => router.push("/income")}
-            style={{
-              flex: 1,
-              borderWidth: 1,
-              borderColor: "#ddd",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            <Ionicons name="add-circle-outline" size={20} color="#111" />
-            <Text
-              style={{
-                fontWeight: "600",
-              }}
-            >
-              Income
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Budget Health */}
-      <View>
-        {budgetHealth && (
-          <Pressable
-            onPress={() => router.push("/(tabs)/budget")}
-            style={{
-              padding: 20,
-              borderRadius: 18,
-              backgroundColor: "#000000",
-              gap: 12,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
                 alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#ffffff"
-                }}
-                >
-                Monthly Budget
-              </Text>
-
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: "#ffffff"
-                }}
-              >
-                {budgetHealth.status === "healthy"
-                  ? "🟢 On track"
-                  : budgetHealth.status === "warning"
-                    ? "🟡 Be careful"
-                    : "🔴 Exceeded"}
-              </Text>
-            </View>
-
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: "#eae7e7",
-              }}
-            >
-              {formatCurrency(budgetHealth.totalSpent, currencyCode)} spent
-            </Text>
-
-            <Text style={{ color: "#666" }}>
-              of {formatCurrency(budgetHealth.totalBudget, currencyCode)}
-            </Text>
-
-            {/* Progress Bar */}
-
-            <View
-              style={{
-                height: 8,
-                backgroundColor: "#ddd",
-                borderRadius: 10,
-                overflow: "hidden",
+                gap: 8,
+                flex: 1,
               }}
             >
               <View
                 style={{
-                  width: `${Math.min(budgetHealth.percentage, 100)}%`,
-                  height: "100%",
-                  backgroundColor:
-                    budgetHealth.status === "exceeded"
-                      ? "#d00"
-                      : budgetHealth.status === "warning"
-                        ? "#e6a700"
-                        : "#1a9c4b",
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: action.color,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
-            </View>
-
-            <Text
-              style={{
-                fontSize: 13,
-                color: "#666",
-              }}
-            >
-              {budgetHealth.percentage.toFixed(0)}% of your monthly budget used
-            </Text>
-
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                marginTop: 4,
-              }}
-            >
-              View Budget →
-            </Text>
-          </Pressable>
-        )}
+              >
+                <Ionicons
+                  name={action.icon}
+                  size={24}
+                  color={action.iconColor}
+                />
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "500",
+                  color: SECONDARY,
+                }}
+              >
+                {action.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
+
+      {/* Budget Health */}
+      {budgetHealth && (
+        <Pressable
+          onPress={() => router.push("/(tabs)/budget")}
+          style={{
+            padding: 20,
+            borderRadius: 20,
+            backgroundColor: colors.surface,
+            gap: 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "700",
+                color: SECONDARY,
+              }}
+            >
+              Monthly Budget
+            </Text>
+
+            <View
+              style={{
+                backgroundColor:
+                  budgetHealth.status === "healthy"
+                    ? "rgba(26,156,75,0.12)"
+                    : budgetHealth.status === "warning"
+                      ? "rgba(251,204,51,0.2)"
+                      : "rgba(244,67,54,0.12)",
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color:
+                    budgetHealth.status === "healthy"
+                      ? "#1a9c4b"
+                      : budgetHealth.status === "warning"
+                        ? "#b8860b"
+                        : "#d00",
+                }}
+              >
+                {budgetHealth.status === "healthy"
+                  ? "On track"
+                  : budgetHealth.status === "warning"
+                    ? "Be careful"
+                    : "Exceeded"}
+              </Text>
+            </View>
+          </View>
+
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "600",
+              color: SECONDARY,
+            }}
+          >
+            {formatCurrency(budgetHealth.totalSpent, currencyCode)} spent
+          </Text>
+
+          <Text style={{ color: "#999", fontSize: 13 }}>
+            of {formatCurrency(budgetHealth.totalBudget, currencyCode)}
+          </Text>
+
+          <View
+            style={{
+              height: 6,
+              backgroundColor: "#eee",
+              borderRadius: 10,
+              overflow: "hidden",
+            }}
+          >
+            <View
+              style={{
+                width: `${Math.min(budgetHealth.percentage, 100)}%`,
+                height: "100%",
+                backgroundColor:
+                  budgetHealth.status === "exceeded"
+                    ? "#d00"
+                    : budgetHealth.status === "warning"
+                      ? PRIMARY
+                      : "#1a9c4b",
+                borderRadius: 10,
+              }}
+            />
+          </View>
+
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#999",
+            }}
+          >
+            {budgetHealth.percentage.toFixed(0)}% of your monthly budget used
+          </Text>
+
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: SECONDARY,
+            }}
+          >
+            View Budget →
+          </Text>
+        </Pressable>
+      )}
 
       {/* Savings Goals */}
       <Pressable
         onPress={() => router.push("/savings-goals")}
         style={{
-          padding: 20,
-          borderRadius: 18,
-          borderWidth: 1,
-          borderColor: "#ddd",
+          padding: 18,
+          borderRadius: 20,
+          backgroundColor: colors.surface,
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Ionicons name="flag-outline" size={24} color="#111" />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: "rgba(251,204,51,0.2)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="flag" size={20} color={SECONDARY} />
+          </View>
           <View>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: "700",
+                color: SECONDARY,
               }}
             >
               Savings Goals
             </Text>
             <Text
               style={{
-                marginTop: 4,
+                marginTop: 3,
                 fontSize: 13,
-                color: "#666",
+                color: "#999",
               }}
             >
               Track your progress
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#666" />
+        <Ionicons name="chevron-forward" size={20} color="#ccc" />
       </Pressable>
 
       {/* Recent Transactions */}
-      <View style={{ gap: 14 }}>
+      <View style={{ gap: 16 }}>
         <View
           style={{
             flexDirection: "row",
@@ -593,82 +726,123 @@ export function DashboardScreen() {
         >
           <Text
             style={{
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: "700",
+              color: SECONDARY,
             }}
           >
-            Recent Transactions
+            Transactions
           </Text>
 
           <Pressable onPress={() => router.push("/(tabs)/activity")}>
             <Text
               style={{
                 fontWeight: "600",
+                fontSize: 14,
+                color: SECONDARY,
               }}
             >
-              See All →
+              View All
             </Text>
           </Pressable>
         </View>
 
         {recentTransactions.length === 0 ? (
-          <Text style={{ color: "#666" }}>No transactions yet.</Text>
+          <View
+            style={{
+              alignItems: "center",
+              paddingVertical: 40,
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+            }}
+          >
+            <Ionicons
+              name="receipt-outline"
+              size={48}
+              color={colors.borderInput}
+              style={{ marginBottom: 12 }}
+            />
+            <Text style={{ color: "#999" }}>No transactions yet.</Text>
+          </View>
         ) : (
-          <View style={{ gap: 10 }}>
-            {recentTransactions.map((transaction) => {
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              paddingVertical: 8,
+            }}
+          >
+            {recentTransactions.map((transaction, index) => {
               const isExpense = transaction.type === "expense";
+              const isLast = index === recentTransactions.length - 1;
 
               return (
                 <Pressable
                   key={transaction.id}
                   onPress={() => router.push(`/transaction/${transaction.id}`)}
                   style={{
-                    padding: 16,
-                    borderWidth: 1,
-                    borderColor: "#eee",
-                    borderRadius: 14,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    borderBottomWidth: isLast ? 0 : 1,
+                    borderBottomColor: "#f3f3f3",
                   }}
                 >
                   <View
                     style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: SECONDARY,
                       alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "600",
-                        }}
-                      >
-                        {transaction.category}
-                      </Text>
+                    <Ionicons
+                      name={
+                        isExpense
+                          ? "arrow-up-outline"
+                          : "arrow-down-outline"
+                      }
+                      size={20}
+                      color="#fff"
+                    />
+                  </View>
 
-                      <Text
-                        style={{
-                          marginTop: 4,
-                          color: "#666",
-                          fontSize: 13,
-                        }}
-                      >
-                        {transaction.description ||
-                          new Date(transaction.date).toLocaleDateString()}
-                      </Text>
-                    </View>
+                  <View style={{ flex: 1, marginLeft: 14 }}>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: SECONDARY,
+                      }}
+                    >
+                      {transaction.category}
+                    </Text>
 
                     <Text
                       style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: isExpense ? "#d00" : "#1a9c4b",
+                        marginTop: 3,
+                        color: "#999",
+                        fontSize: 12,
                       }}
                     >
-                      {isExpense ? "-" : "+"}
-                      {formatCurrency(transaction.amount, currencyCode)}
+                      {isExpense ? "Expense" : "Income"} •{" "}
+                      {formatTransactionTime(transaction.date)}
                     </Text>
                   </View>
+
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "700",
+                      color: isExpense ? SECONDARY : "#1a9c4b",
+                    }}
+                  >
+                    {isExpense ? "-" : "+"}
+                    {formatCurrency(transaction.amount, currencyCode)}
+                  </Text>
                 </Pressable>
               );
             })}

@@ -1,12 +1,13 @@
 import { openDB, type IDBPDatabase } from "idb";
 
-const DATABASE_NAME = "denari";
-const DATABASE_VERSION = 3;
+const DATABASE_NAME = "denari-v2";
+const DATABASE_VERSION = 4;
 
 interface DenariDatabase {
   profiles: {
     key: string;
     value: Record<string, unknown>;
+    indexes: { "by-user-id": string };
   };
   accounts: {
     key: string;
@@ -36,15 +37,23 @@ let recoveryAttempted = false;
 export function getDatabase() {
   if (!databasePromise) {
     databasePromise = openDB<DenariDatabase>(DATABASE_NAME, DATABASE_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, newVersion, transaction) {
         console.log(`Upgrading database from v${oldVersion} to v${DATABASE_VERSION}`);
         
         // Create profiles store
         if (!db.objectStoreNames.contains("profiles")) {
           console.log("Creating profiles store");
-          db.createObjectStore("profiles", {
+          const profilesStore = db.createObjectStore("profiles", {
             keyPath: "id",
           });
+          profilesStore.createIndex("by-user-id", "userId", { unique: true });
+        } else if (oldVersion < 4) {
+          // Add userId index to existing profiles store in v4
+          console.log("Adding userId index to profiles store for v4");
+          const profilesStore = transaction.objectStore("profiles");
+          if (!profilesStore.indexNames.contains("by-user-id")) {
+            profilesStore.createIndex("by-user-id", "userId", { unique: true });
+          }
         }
 
         // Create accounts store

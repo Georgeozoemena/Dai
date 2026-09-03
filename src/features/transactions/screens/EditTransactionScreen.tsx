@@ -15,6 +15,7 @@ import {
   getTransaction,
   updateTransaction,
 } from "../services/transactionService";
+import { colors, screenStyles } from "../../../theme";
 
 interface EditTransactionScreenProps {
   transactionId: string;
@@ -168,16 +169,10 @@ export function EditTransactionScreen({
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={screenStyles.centered}>
         <ActivityIndicator />
 
-        <Text style={{ marginTop: 12 }}>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
           Loading transaction...
         </Text>
       </View>
@@ -186,42 +181,15 @@ export function EditTransactionScreen({
 
   if (!transaction) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          Transaction not found
-        </Text>
+      <View style={screenStyles.centered}>
+        <Text style={screenStyles.sectionTitle}>Transaction not found</Text>
 
         {onBack && (
           <Pressable
             onPress={onBack}
-            style={{
-              marginTop: 20,
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderRadius: 10,
-              backgroundColor: "#111",
-            }}
+            style={[screenStyles.primaryButton, { marginTop: 20, paddingHorizontal: 20 }]}
           >
-            <Text
-              style={{
-                color: "#fff",
-                fontWeight: "600",
-              }}
-            >
-              Go Back
-            </Text>
+            <Text style={screenStyles.primaryButtonText}>Go Back</Text>
           </Pressable>
         )}
       </View>
@@ -230,57 +198,27 @@ export function EditTransactionScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {onBack && (
         <Pressable onPress={onBack}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
-            ← Back
-          </Text>
+          <Text style={[screenStyles.label, { fontWeight: "600" }]}>← Back</Text>
         </Pressable>
       )}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Edit Transaction
-        </Text>
+        <Text style={screenStyles.title}>Edit Transaction</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Update your transaction details.
         </Text>
       </View>
 
       {/* Transaction type */}
 
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#ddd",
-          borderRadius: 12,
-          padding: 16,
-        }}
-      >
-        <Text style={{ color: "#666" }}>
-          Type
-        </Text>
+      <View style={screenStyles.card}>
+        <Text style={{ color: colors.textSecondary }}>Type</Text>
 
         <Text
           style={{
@@ -298,85 +236,41 @@ export function EditTransactionScreen({
       {/* Amount */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Amount
-        </Text>
+        <Text style={screenStyles.label}>Amount</Text>
 
         <TextInput
           value={amount}
           onChangeText={setAmount}
           keyboardType="decimal-pad"
           placeholder="0.00"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Category */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Category
-        </Text>
+        <Text style={screenStyles.label}>Category</Text>
 
         <TextInput
           value={category}
           onChangeText={setCategory}
           placeholder="Category"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
       </View>
 
       {/* Description */}
 
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Description
-        </Text>
+        <Text style={screenStyles.label}>Description</Text>
 
         <TextInput
           value={description}
           onChangeText={setDescription}
           placeholder="Description"
           multiline
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-            minHeight: 100,
-            textAlignVertical: "top",
-          }}
+          style={[screenStyles.input, screenStyles.inputMultiline]}
         />
       </View>
 
@@ -385,21 +279,9 @@ export function EditTransactionScreen({
       <Pressable
         onPress={handleSave}
         disabled={saving}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-          alignItems: "center",
-          opacity: saving ? 0.5 : 1,
-        }}
+        style={[screenStyles.primaryButton, { opacity: saving ? 0.5 : 1 }]}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
+        <Text style={screenStyles.primaryButtonText}>
           {saving
             ? "Saving..."
             : "Save Changes"}

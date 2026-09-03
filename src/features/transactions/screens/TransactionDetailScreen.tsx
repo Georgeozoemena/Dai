@@ -15,6 +15,7 @@ import {
   getTransaction,
   deleteTransaction,
 } from "../services/transactionService";
+import { colors, radii, screenStyles } from "../../../theme";
 
 interface TransactionDetailScreenProps {
   transactionId: string;
@@ -50,58 +51,27 @@ export function TransactionDetailScreen({
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={screenStyles.centered}>
         <ActivityIndicator />
 
-        <Text style={{ marginTop: 12 }}>Loading transaction...</Text>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Loading transaction...
+        </Text>
       </View>
     );
   }
 
   if (!transaction) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          Transaction not found
-        </Text>
+      <View style={screenStyles.centered}>
+        <Text style={screenStyles.sectionTitle}>Transaction not found</Text>
 
         {onBack && (
           <Pressable
             onPress={onBack}
-            style={{
-              marginTop: 20,
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderRadius: 10,
-              backgroundColor: "#111",
-            }}
+            style={[screenStyles.primaryButton, { marginTop: 20, paddingHorizontal: 20 }]}
           >
-            <Text
-              style={{
-                color: "#fff",
-                fontWeight: "600",
-              }}
-            >
-              Go Back
-            </Text>
+            <Text style={screenStyles.primaryButtonText}>Go Back</Text>
           </Pressable>
         )}
       </View>
@@ -147,29 +117,27 @@ export function TransactionDetailScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {onBack && (
         <Pressable onPress={onBack}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
-            ← Back
-          </Text>
+          <Text style={[screenStyles.label, { fontWeight: "600" }]}>← Back</Text>
         </Pressable>
       )}
 
-      <View>
+      <View
+        style={{
+          backgroundColor: colors.secondary,
+          borderRadius: radii.xl,
+          padding: 24,
+        }}
+      >
         <Text
           style={{
             fontSize: 14,
-            color: "#666",
+            color: colors.primary,
+            fontWeight: "600",
           }}
         >
           {isExpense ? "Expense" : "Income"}
@@ -180,6 +148,7 @@ export function TransactionDetailScreen({
             marginTop: 8,
             fontSize: 32,
             fontWeight: "700",
+            color: colors.primary,
           }}
         >
           {isExpense ? "-" : "+"}
@@ -187,17 +156,9 @@ export function TransactionDetailScreen({
         </Text>
       </View>
 
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#ddd",
-          borderRadius: 16,
-          padding: 20,
-          gap: 16,
-        }}
-      >
+      <View style={[screenStyles.card, { gap: 16 }]}>
         <View>
-          <Text style={{ color: "#666" }}>Category</Text>
+          <Text style={{ color: colors.textSecondary }}>Category</Text>
 
           <Text
             style={{
@@ -211,7 +172,7 @@ export function TransactionDetailScreen({
         </View>
 
         <View>
-          <Text style={{ color: "#666" }}>Description</Text>
+          <Text style={{ color: colors.textSecondary }}>Description</Text>
 
           <Text
             style={{
@@ -224,7 +185,7 @@ export function TransactionDetailScreen({
         </View>
 
         <View>
-          <Text style={{ color: "#666" }}>Date</Text>
+          <Text style={{ color: colors.textSecondary }}>Date</Text>
 
           <Text
             style={{
@@ -237,7 +198,7 @@ export function TransactionDetailScreen({
         </View>
 
         <View>
-          <Text style={{ color: "#666" }}>Type</Text>
+          <Text style={{ color: colors.textSecondary }}>Type</Text>
 
           <Text
             style={{
@@ -252,47 +213,30 @@ export function TransactionDetailScreen({
 
       <Pressable
         onPress={() => router.push(`/transaction/${transactionId}/edit`)}
-        style={{
-          paddingVertical: 16,
-          borderRadius: 14,
-          backgroundColor: "#111",
-          alignItems: "center",
-          flexDirection: "row",
-          justifyContent: "center",
-          gap: 8,
-        }}
+        style={[screenStyles.primaryButton, { flexDirection: "row", justifyContent: "center", gap: 8 }]}
       >
-        <Ionicons name="create-outline" size={20} color="#fff" />
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Edit Transaction
-        </Text>
+        <Ionicons name="create-outline" size={20} color={colors.primary} />
+        <Text style={screenStyles.primaryButtonText}>Edit Transaction</Text>
       </Pressable>
 
       <Pressable
         onPress={confirmDelete}
         disabled={deleting}
-        style={{
-          paddingVertical: 16,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: "#d00",
-          alignItems: "center",
-          flexDirection: "row",
-          justifyContent: "center",
-          gap: 8,
-          opacity: deleting ? 0.5 : 1,
-        }}
+        style={[
+          screenStyles.outlineButton,
+          {
+            borderColor: colors.error,
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 8,
+            opacity: deleting ? 0.5 : 1,
+          },
+        ]}
       >
-        <Ionicons name="trash-outline" size={20} color="#d00" />
+        <Ionicons name="trash-outline" size={20} color={colors.error} />
         <Text
           style={{
-            color: "#d00",
+            color: colors.error,
             fontSize: 16,
             fontWeight: "600",
           }}

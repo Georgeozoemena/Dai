@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { resetDatabase } from "../database/web/database";
+import { colors, screenStyles } from "../theme";
 
 export default function ResetDatabaseRoute() {
   const [resetting, setResetting] = useState(false);
@@ -38,43 +39,22 @@ export default function ResetDatabaseRoute() {
     <View
       style={{
         flex: 1,
+        backgroundColor: colors.background,
         padding: 24,
         justifyContent: "center",
         gap: 24,
       }}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "700",
-          }}
-        >
-          Reset Database
-        </Text>
+        <Text style={screenStyles.title}>Reset Database</Text>
 
-        <Text
-          style={{
-            marginTop: 12,
-            color: "#666",
-            fontSize: 16,
-            lineHeight: 24,
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           This will delete all data including profiles, accounts, transactions, and budgets.
         </Text>
       </View>
 
       {message ? (
-        <Text
-          style={{
-            padding: 16,
-            backgroundColor: "#f5f5f5",
-            borderRadius: 12,
-          }}
-        >
-          {message}
-        </Text>
+        <Text style={screenStyles.card}>{message}</Text>
       ) : null}
 
       <Pressable
@@ -83,7 +63,7 @@ export default function ResetDatabaseRoute() {
         style={{
           paddingVertical: 16,
           borderRadius: 14,
-          backgroundColor: "#d00",
+          backgroundColor: colors.error,
           alignItems: "center",
           opacity: resetting ? 0.5 : 1,
         }}
@@ -101,22 +81,9 @@ export default function ResetDatabaseRoute() {
 
       <Pressable
         onPress={() => router.back()}
-        style={{
-          paddingVertical: 16,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: "#ddd",
-          alignItems: "center",
-        }}
+        style={screenStyles.outlineButton}
       >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Cancel
-        </Text>
+        <Text style={screenStyles.outlineButtonText}>Cancel</Text>
       </Pressable>
     </View>
   );

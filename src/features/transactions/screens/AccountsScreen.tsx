@@ -13,6 +13,7 @@ import { getProfile } from "../../onboarding/services/profileService";
 import { useAccountStore } from "../../../store/account/accountStore";
 
 import { AccountCard } from "../components/AccountCard";
+import { colors, screenStyles } from "../../../theme";
 
 export function AccountsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -65,34 +66,24 @@ export function AccountsScreen() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
+      <View style={screenStyles.centered}>
+        <ActivityIndicator color={colors.secondary} />
 
-        <Text style={{ marginTop: 12 }}>Loading accounts...</Text>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Loading accounts...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
+      <View style={screenStyles.centered}>
         <Text
           style={{
             fontSize: 16,
             textAlign: "center",
+            color: colors.text,
           }}
         >
           {error}
@@ -103,26 +94,12 @@ export function AccountsScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          My Accounts
-        </Text>
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.title}>My Accounts</Text>
+        <Text style={screenStyles.subtitle}>
           Choose the account you want to use.
         </Text>
       </View>
@@ -134,46 +111,32 @@ export function AccountsScreen() {
           if (profile) {
             router.push({
               pathname: "/create-account",
-              params: { 
+              params: {
                 profileId: profile.id,
                 returnTo: "accounts",
               },
             });
           }
         }}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          backgroundColor: "#111",
-          paddingVertical: 16,
-          borderRadius: 14,
-        }}
+        style={[
+          screenStyles.primaryButton,
+          {
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 8,
+          },
+        ]}
       >
-        <Ionicons name="add-circle-outline" size={20} color="#fff" />
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          Create New Account
-        </Text>
+        <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+        <Text style={screenStyles.primaryButtonText}>Create New Account</Text>
       </Pressable>
 
       {accounts.length === 0 ? (
-        <View
-          style={{
-            paddingVertical: 40,
-            alignItems: "center",
-          }}
-        >
+        <View style={screenStyles.emptyState}>
           <Text
             style={{
               fontSize: 16,
-              color: "#666",
+              color: colors.textSecondary,
               textAlign: "center",
             }}
           >

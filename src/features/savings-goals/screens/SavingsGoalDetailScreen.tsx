@@ -22,6 +22,7 @@ import {
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+import { colors, screenStyles } from "../../../theme";
 
 interface SavingsGoalDetailScreenProps {
   goalId: string;
@@ -169,16 +170,10 @@ export function SavingsGoalDetailScreen({
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
+      <View style={screenStyles.centered}>
+        <ActivityIndicator color={colors.secondary} />
 
-        <Text style={{ marginTop: 12 }}>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
           Loading goal...
         </Text>
       </View>
@@ -187,22 +182,8 @@ export function SavingsGoalDetailScreen({
 
   if (!goal) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          Goal not found
-        </Text>
+      <View style={screenStyles.centered}>
+        <Text style={screenStyles.sectionTitle}>Goal not found</Text>
       </View>
     );
   }
@@ -223,67 +204,40 @@ export function SavingsGoalDetailScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 24,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
       <View>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          {goal.name}
-        </Text>
+        <Text style={screenStyles.title}>{goal.name}</Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            color: "#666",
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Track your progress towards this goal.
         </Text>
       </View>
 
       {/* Progress */}
 
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#ddd",
-          borderRadius: 16,
-          padding: 20,
-          gap: 12,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "600",
-          }}
-        >
+      <View style={[screenStyles.card, { gap: 12 }]}>
+        <Text style={screenStyles.sectionTitle}>
           {completed
             ? "🎉 Goal Completed!"
             : `${percentage.toFixed(0)}% Complete`}
         </Text>
 
-        <Text style={{ color: "#666" }}>
+        <Text style={{ color: colors.textSecondary }}>
           {formatCurrency(goal.currentAmount, currencyCode)} saved
         </Text>
 
-        <Text style={{ color: "#666" }}>
+        <Text style={{ color: colors.textSecondary }}>
           Target: {formatCurrency(goal.targetAmount, currencyCode)}
         </Text>
 
         <View
           style={{
             height: 12,
-            backgroundColor: "#e5e5e5",
+            backgroundColor: colors.borderInput,
             borderRadius: 10,
             overflow: "hidden",
           }}
@@ -292,7 +246,7 @@ export function SavingsGoalDetailScreen({
             style={{
               width: `${percentage}%`,
               height: "100%",
-              backgroundColor: "#111",
+              backgroundColor: colors.secondary,
             }}
           />
         </View>
@@ -301,16 +255,9 @@ export function SavingsGoalDetailScreen({
       {/* Update Savings */}
 
       <View style={{ gap: 10 }}>
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "700",
-          }}
-        >
-          Update Savings
-        </Text>
+        <Text style={screenStyles.sectionTitle}>Update Savings</Text>
 
-        <Text style={{ color: "#666" }}>
+        <Text style={{ color: colors.textSecondary }}>
           Enter the total amount you have saved so far.
         </Text>
 
@@ -319,34 +266,15 @@ export function SavingsGoalDetailScreen({
           onChangeText={setCurrentAmount}
           keyboardType="decimal-pad"
           placeholder="0.00"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 16,
-          }}
+          style={screenStyles.input}
         />
 
         <Pressable
           onPress={handleUpdateSavings}
           disabled={saving}
-          style={{
-            backgroundColor: "#111",
-            paddingVertical: 16,
-            borderRadius: 14,
-            alignItems: "center",
-            opacity: saving ? 0.5 : 1,
-          }}
+          style={[screenStyles.primaryButton, { opacity: saving ? 0.5 : 1 }]}
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
+          <Text style={screenStyles.primaryButtonText}>
             {saving
               ? "Updating..."
               : "Update Progress"}
@@ -359,21 +287,19 @@ export function SavingsGoalDetailScreen({
       <Pressable
         onPress={handleDelete}
         disabled={deleting}
-        style={{
-          paddingVertical: 16,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: "#d00",
-          alignItems: "center",
-          opacity: deleting ? 0.5 : 1,
-        }}
+        style={[
+          screenStyles.outlineButton,
+          {
+            borderColor: colors.error,
+            opacity: deleting ? 0.5 : 1,
+          },
+        ]}
       >
         <Text
-          style={{
-            color: "#d00",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
+          style={[
+            screenStyles.outlineButtonText,
+            { color: colors.error },
+          ]}
         >
           {deleting
             ? "Deleting..."

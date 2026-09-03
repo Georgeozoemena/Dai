@@ -7,6 +7,8 @@ import {
 } from "react-native";
 
 import { verifyPin } from "../services/pinService";
+import { requireCurrentUserId } from "../services/currentUserService";
+import { colors, screenStyles } from "../../../theme";
 
 interface PinLockScreenProps {
   onSuccess?: () => void;
@@ -36,7 +38,8 @@ export function PinLockScreen({
       setChecking(true);
       setError("");
 
-      const valid = await verifyPin(pin);
+      const userId = await requireCurrentUserId();
+      const valid = await verifyPin(userId, pin);
 
       if (!valid) {
         setError("Incorrect PIN.");
@@ -44,7 +47,7 @@ export function PinLockScreen({
         return;
       }
 
-      console.log("PIN VERIFIED");
+      console.log("PIN VERIFIED FOR USER:", userId);
 
       if (onSuccess) {
         onSuccess();
@@ -61,27 +64,15 @@ export function PinLockScreen({
     <View
       style={{
         flex: 1,
+        backgroundColor: colors.background,
         padding: 24,
         justifyContent: "center",
       }}
     >
       <View style={{ gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "700",
-          }}
-        >
-          Welcome back
-        </Text>
+        <Text style={screenStyles.title}>Welcome back</Text>
 
-        <Text
-          style={{
-            color: "#666",
-            fontSize: 16,
-            lineHeight: 24,
-          }}
-        >
+        <Text style={screenStyles.subtitle}>
           Enter your PIN to continue using Dai.
         </Text>
       </View>
@@ -101,20 +92,20 @@ export function PinLockScreen({
           maxLength={4}
           textAlign="center"
           autoFocus
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 14,
-            paddingVertical: 16,
-            fontSize: 24,
-            letterSpacing: 12,
-          }}
+          style={[
+            screenStyles.input,
+            {
+              fontSize: 24,
+              letterSpacing: 12,
+              paddingVertical: 16,
+            },
+          ]}
         />
 
         {error ? (
           <Text
             style={{
-              color: "#d00",
+              color: colors.error,
               textAlign: "center",
             }}
           >
@@ -125,22 +116,15 @@ export function PinLockScreen({
         <Pressable
           onPress={handleUnlock}
           disabled={checking}
-          style={{
-            marginTop: 8,
-            backgroundColor: "#111",
-            paddingVertical: 16,
-            borderRadius: 14,
-            alignItems: "center",
-            opacity: checking ? 0.5 : 1,
-          }}
+          style={[
+            screenStyles.primaryButton,
+            {
+              marginTop: 8,
+              opacity: checking ? 0.5 : 1,
+            },
+          ]}
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
+          <Text style={screenStyles.primaryButtonText}>
             {checking ? "Checking..." : "Unlock Dai"}
           </Text>
         </Pressable>

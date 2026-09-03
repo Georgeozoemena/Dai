@@ -6,6 +6,7 @@ export function initializeDatabase() {
 
     CREATE TABLE IF NOT EXISTS profiles (
       id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
       email TEXT,
       phone TEXT,
@@ -13,6 +14,8 @@ export function initializeDatabase() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
 
     CREATE TABLE IF NOT EXISTS accounts (
       id TEXT PRIMARY KEY NOT NULL,

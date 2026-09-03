@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from "react-native";
-import { useState } from "react";
+
+import { colors, radii } from "../../../theme";
 
 interface AmountInputProps {
   currencySymbol: string;
@@ -53,7 +54,7 @@ export function AmountInput({
         <Text
           style={{
             fontSize: 16,
-            color: "#666",
+            color: colors.textSecondary,
           }}
         >
           Amount
@@ -64,6 +65,7 @@ export function AmountInput({
             fontSize: 42,
             fontWeight: "700",
             marginTop: 8,
+            color: colors.secondary,
           }}
         >
           {currencySymbol}
@@ -89,8 +91,8 @@ export function AmountInput({
                   height: 64,
                   alignItems: "center",
                   justifyContent: "center",
-                  borderRadius: 16,
-                  backgroundColor: "#f2f2f2",
+                  borderRadius: radii.lg,
+                  backgroundColor: colors.surface,
                 }}
               >
                 <Text

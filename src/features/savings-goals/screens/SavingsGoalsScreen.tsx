@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import type { SavingsGoal } from "../../../types/savingsGoal";
 
@@ -17,6 +18,7 @@ import { getSavingsGoals } from "../services/savingsGoalService";
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
+import { colors, screenStyles } from "../../../theme";
 
 export function SavingsGoalsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -54,43 +56,25 @@ export function SavingsGoalsScreen() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
+      <View style={screenStyles.centered}>
+        <ActivityIndicator color={colors.secondary} />
 
-        <Text style={{ marginTop: 12 }}>Loading goals...</Text>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Loading goals...
+        </Text>
       </View>
     );
   }
 
   if (!currentAccountId) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-          }}
-        >
-          No account selected
-        </Text>
+      <View style={screenStyles.centered}>
+        <Text style={screenStyles.sectionTitle}>No account selected</Text>
 
         <Text
           style={{
             marginTop: 8,
-            color: "#666",
+            color: colors.textSecondary,
             textAlign: "center",
           }}
         >
@@ -102,10 +86,8 @@ export function SavingsGoalsScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        padding: 24,
-        gap: 20,
-      }}
+      style={screenStyles.root}
+      contentContainerStyle={screenStyles.scrollContent}
     >
       {/* Header */}
 
@@ -117,67 +99,38 @@ export function SavingsGoalsScreen() {
         }}
       >
         <View>
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: "700",
-            }}
-          >
-            Savings Goals
-          </Text>
+          <Text style={screenStyles.title}>Savings Goals</Text>
 
-          <Text
-            style={{
-              marginTop: 6,
-              color: "#666",
-            }}
-          >
-            Save towards what matters.
-          </Text>
+          <Text style={screenStyles.subtitle}>Save towards what matters.</Text>
         </View>
 
         <Pressable
           onPress={() => router.push("/create-goal")}
-          style={{
-            backgroundColor: "#111",
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderRadius: 12,
-          }}
+          style={[
+            screenStyles.primaryButton,
+            { paddingHorizontal: 16, paddingVertical: 12 },
+          ]}
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontWeight: "700",
-            }}
-          >
-            + Add
-          </Text>
+          <Text style={screenStyles.primaryButtonText}>+ Add</Text>
         </Pressable>
       </View>
 
       {/* Goals */}
 
       {goals.length === 0 ? (
-        <View
-          style={{
-            paddingVertical: 60,
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-            }}
-          >
-            No savings goals yet
-          </Text>
+        <View style={[screenStyles.emptyState, { gap: 12 }]}>
+          <Ionicons
+            name="flag-outline"
+            size={64}
+            color={colors.borderInput}
+            style={{ marginBottom: 8 }}
+          />
+
+          <Text style={screenStyles.sectionTitle}>No savings goals yet</Text>
 
           <Text
             style={{
-              color: "#666",
+              color: colors.textSecondary,
               textAlign: "center",
             }}
           >
@@ -186,20 +139,12 @@ export function SavingsGoalsScreen() {
 
           <Pressable
             onPress={() => router.push("/create-goal")}
-            style={{
-              marginTop: 8,
-              backgroundColor: "#111",
-              paddingHorizontal: 20,
-              paddingVertical: 14,
-              borderRadius: 14,
-            }}
+            style={[
+              screenStyles.primaryButton,
+              { marginTop: 8, paddingHorizontal: 20 },
+            ]}
           >
-            <Text
-              style={{
-                color: "#fff",
-                fontWeight: "600",
-              }}
-            >
+            <Text style={screenStyles.primaryButtonText}>
               Create Your First Goal
             </Text>
           </Pressable>
@@ -218,13 +163,7 @@ export function SavingsGoalsScreen() {
               <Pressable
                 key={goal.id}
                 onPress={() => router.push(`/goal/${goal.id}`)}
-                style={{
-                  padding: 18,
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  borderRadius: 16,
-                  gap: 12,
-                }}
+                style={[screenStyles.card, { gap: 12 }]}
               >
                 <View
                   style={{
@@ -238,6 +177,7 @@ export function SavingsGoalsScreen() {
                       fontSize: 18,
                       fontWeight: "700",
                       flex: 1,
+                      color: colors.text,
                     }}
                   >
                     {goal.name}
@@ -247,6 +187,7 @@ export function SavingsGoalsScreen() {
                     <Text
                       style={{
                         fontWeight: "700",
+                        color: colors.text,
                       }}
                     >
                       🎉 Complete
@@ -254,7 +195,7 @@ export function SavingsGoalsScreen() {
                   )}
                 </View>
 
-                <Text style={{ color: "#666" }}>
+                <Text style={{ color: colors.textSecondary }}>
                   {formatCurrency(goal.currentAmount, currencyCode)} of{" "}
                   {formatCurrency(goal.targetAmount, currencyCode)}
                 </Text>
@@ -264,7 +205,7 @@ export function SavingsGoalsScreen() {
                 <View
                   style={{
                     height: 10,
-                    backgroundColor: "#e5e5e5",
+                    backgroundColor: colors.borderInput,
                     borderRadius: 10,
                     overflow: "hidden",
                   }}
@@ -273,7 +214,7 @@ export function SavingsGoalsScreen() {
                     style={{
                       width: `${percentage}%`,
                       height: "100%",
-                      backgroundColor: "#111",
+                      backgroundColor: colors.secondary,
                     }}
                   />
                 </View>
@@ -281,7 +222,7 @@ export function SavingsGoalsScreen() {
                 <Text
                   style={{
                     fontSize: 13,
-                    color: "#666",
+                    color: colors.textSecondary,
                   }}
                 >
                   {percentage.toFixed(0)}% complete
