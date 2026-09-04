@@ -253,56 +253,32 @@ export function DashboardScreen() {
             alignItems: "center",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Pressable
-              onPress={() => router.push("/settings")}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: "rgba(255,255,255,0.1)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="person-outline" size={20} color="#fff" />
-            </Pressable>
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: "rgba(255,255,255,0.1)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="notifications-outline" size={20} color="#fff" />
-            </View>
-          </View>
-
           <Pressable
-            onPress={() => router.push("/(tabs)/accounts")}
+            onPress={() => router.push("/settings")}
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-              backgroundColor: "rgba(255,255,255,0.12)",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              width: 40,
+              height: 40,
               borderRadius: 20,
+              backgroundColor: "rgba(255,255,255,0.1)",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                fontSize: 12,
-                fontWeight: "600",
-              }}
-            >
-              ID: {accountIdLabel}
-            </Text>
-            <Ionicons name="copy-outline" size={14} color="rgba(255,255,255,0.7)" />
+            <Ionicons name="person-outline" size={20} color="#fff" />
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: "rgba(255,255,255,0.1)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="notifications-outline" size={20} color="#fff" />
           </Pressable>
         </View>
 

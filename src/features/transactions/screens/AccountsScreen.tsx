@@ -1,5 +1,12 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { 
+  ActivityIndicator, 
+  Pressable, 
+  ScrollView, 
+  Text, 
+  View,
+  StyleSheet,
+} from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -13,7 +20,7 @@ import { getProfile } from "../../onboarding/services/profileService";
 import { useAccountStore } from "../../../store/account/accountStore";
 
 import { AccountCard } from "../components/AccountCard";
-import { colors, screenStyles } from "../../../theme";
+import { colors } from "../../../theme";
 
 export function AccountsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -66,43 +73,35 @@ export function AccountsScreen() {
 
   if (loading) {
     return (
-      <View style={screenStyles.centered}>
-        <ActivityIndicator color={colors.secondary} />
-
-        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
-          Loading accounts...
-        </Text>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading accounts...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={screenStyles.centered}>
-        <Text
-          style={{
-            fontSize: 16,
-            textAlign: "center",
-            color: colors.text,
-          }}
-        >
-          {error}
-        </Text>
+      <View style={styles.centered}>
+        <Ionicons name="alert-circle" size={48} color={colors.error} />
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={screenStyles.root}
-      contentContainerStyle={screenStyles.scrollContent}
+      style={styles.container}
+      contentContainerStyle={styles.content}
     >
-      <View>
-        <Text style={screenStyles.title}>My Accounts</Text>
-        <Text style={screenStyles.subtitle}>
-          Choose the account you want to use.
+      {/* Header Card */}
+      {/* <View style={styles.headerCard}>
+        <Ionicons name="wallet" size={28} color={colors.primary} />
+        <Text style={styles.headerTitle}>My Accounts</Text>
+        <Text style={styles.headerSubtitle}>
+          Manage your financial accounts
         </Text>
-      </View>
+      </View> */}
 
       {/* Create Account Button */}
       <Pressable
@@ -118,34 +117,22 @@ export function AccountsScreen() {
             });
           }
         }}
-        style={[
-          screenStyles.primaryButton,
-          {
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 8,
-          },
-        ]}
+        style={styles.createButton}
       >
-        <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-        <Text style={screenStyles.primaryButtonText}>Create New Account</Text>
+        <Ionicons name="add-circle" size={20} color={colors.secondary} />
+        <Text style={styles.createButtonText}>Create New Account</Text>
       </Pressable>
 
       {accounts.length === 0 ? (
-        <View style={screenStyles.emptyState}>
-          <Text
-            style={{
-              fontSize: 16,
-              color: colors.textSecondary,
-              textAlign: "center",
-            }}
-          >
-            You don't have any accounts yet.{"\n"}
-            Create one to get started.
+        <View style={styles.emptyCard}>
+          <Ionicons name="file-tray-outline" size={48} color={colors.textMuted} />
+          <Text style={styles.emptyTitle}>No Accounts Yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Create your first account to start tracking your finances
           </Text>
         </View>
       ) : (
-        <View style={{ gap: 12 }}>
+        <View style={styles.accountsList}>
           {accounts.map((account) => (
             <AccountCard
               key={account.id}
@@ -162,3 +149,85 @@ export function AccountsScreen() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    padding: 20,
+    gap: 16,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.text,
+    textAlign: "center",
+    marginTop: 12,
+  },
+  headerCard: {
+    backgroundColor: colors.secondary,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    opacity: 0.8,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 14,
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.secondary,
+    letterSpacing: 0.5,
+  },
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 40,
+    alignItems: "center",
+    gap: 12,
+    marginTop: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  accountsList: {
+    gap: 12,
+  },
+});

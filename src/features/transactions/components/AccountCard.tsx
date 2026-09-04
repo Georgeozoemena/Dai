@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import type { Account } from "../../../types/account";
 
 import { getAccountBalance } from "../services/accountBalanceService";
-import { colors, radii } from "../../../theme";
+import { colors } from "../../../theme";
 
 interface AccountCardProps {
   account: Account;
@@ -50,102 +50,115 @@ export function AccountCard({ account, selected, onPress }: AccountCardProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        borderWidth: selected ? 2 : 1,
-        borderColor: selected ? colors.secondary : colors.borderInput,
-        borderRadius: radii.lg,
-        padding: 20,
-        backgroundColor: colors.surface,
-      }}
+      style={[
+        styles.card,
+        selected && styles.cardSelected,
+      ]}
     >
-      {/* Account information */}
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.iconWrapper}>
           <Ionicons
-            name={selected ? "wallet" : "wallet-outline"}
-            size={24}
+            name="wallet"
+            size={20}
             color={selected ? colors.primary : colors.textSecondary}
           />
-          <View>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-              }}
-            >
-              {account.name}
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 4,
-                color: colors.textSecondary,
-              }}
-            >
-              {account.currencyCode}
-            </Text>
-          </View>
         </View>
-
+        <View style={styles.accountInfo}>
+          <Text style={styles.accountName}>{account.name}</Text>
+          <Text style={styles.currencyCode}>{account.currencyCode}</Text>
+        </View>
         {selected && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: colors.primary,
-              }}
-            >
-              Active
-            </Text>
+          <View style={styles.badge}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
           </View>
         )}
       </View>
 
-      {/* Balance */}
-
-      <View
-        style={{
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            color: colors.textSecondary,
-          }}
-        >
-          Balance
-        </Text>
-
+      {/* Balance - Dashboard Style */}
+      <View style={styles.balanceSection}>
+        <Text style={styles.balanceLabel}>Balance</Text>
         {loading ? (
-          <ActivityIndicator
-            style={{
-              marginTop: 8,
-              alignSelf: "flex-start",
-            }}
-          />
+          <ActivityIndicator color={colors.primary} />
         ) : (
-          <Text
-            style={{
-              marginTop: 4,
-              fontSize: 28,
-              fontWeight: "700",
-            }}
-          >
-            {currencySymbol}
-            {balance?.toLocaleString() ?? "—"}
+          <Text style={styles.balanceAmount}>
+            {currencySymbol}{balance?.toLocaleString() ?? "0"}
           </Text>
         )}
       </View>
+
+      {/* Active Indicator */}
+      {selected && (
+        <View style={styles.activeBar} />
+      )}
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 2,
+    borderColor: "transparent",
+    position: "relative",
+    overflow: "hidden",
+  },
+  cardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}08`,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  accountName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  currencyCode: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  badge: {
+    marginLeft: 8,
+  },
+  balanceSection: {
+    gap: 4,
+  },
+  balanceLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: "500",
+  },
+  balanceAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  activeBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: colors.primary,
+  },
+});

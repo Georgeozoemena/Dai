@@ -67,7 +67,7 @@ export function useGoogleAuth() {
   }, [response, setAuth]);
 
   return {
-    request,
+    isReady: Boolean(request?.url),
     promptAsync,
   };
 }

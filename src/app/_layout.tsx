@@ -35,6 +35,13 @@ export default function RootLayout() {
       />
 
       <Stack.Screen
+        name="login"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
         name="onboarding"
         options={{
           headerShown: false,
@@ -122,6 +129,13 @@ export default function RootLayout() {
         name="goal/[id]"
         options={{
           title: "Savings Goal",
+        }}
+      />
+
+      <Stack.Screen
+        name="notifications"
+        options={{
+          headerShown: false,
         }}
       />
 

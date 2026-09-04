@@ -1,134 +1,157 @@
 import { useState } from "react";
-import {
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { verifyPin } from "../services/pinService";
 import { requireCurrentUserId } from "../services/currentUserService";
-import { colors, screenStyles } from "../../../theme";
 
 interface PinLockScreenProps {
   onSuccess?: () => void;
 }
 
-export function PinLockScreen({
-  onSuccess,
-}: PinLockScreenProps) {
+export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
 
   const handlePinChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 4);
-
-    setPin(cleaned);
+    setPin(value.replace(/\D/g, "").slice(0, 4));
     setError("");
   };
 
   const handleUnlock = async () => {
     if (pin.length !== 4) {
-      setError("Enter your 4-digit PIN.");
-      return;
+      return setError("Enter your 4-digit PIN.");
     }
 
     try {
       setChecking(true);
       setError("");
 
-      const userId = await requireCurrentUserId();
-      const valid = await verifyPin(userId, pin);
+      const valid = await verifyPin(
+        await requireCurrentUserId(),
+        pin,
+      );
 
       if (!valid) {
-        setError("Incorrect PIN.");
+        setError("Incorrect PIN. Try again.");
         setPin("");
         return;
       }
 
-      console.log("PIN VERIFIED FOR USER:", userId);
-
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error("PIN VERIFICATION FAILED:", error);
-      setError("Unable to verify PIN. Please try again.");
+      onSuccess?.();
+    } catch {
+      setError("Unable to verify PIN.");
     } finally {
       setChecking(false);
     }
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: 24,
-        justifyContent: "center",
-      }}
-    >
-      <View style={{ gap: 8 }}>
-        <Text style={screenStyles.title}>Welcome back</Text>
+    <View style={styles.container}>
+      <View style={styles.content}>
+        {/* Title */}
+        <Text style={styles.title}>Enter Your{"\n"}PIN</Text>
 
-        <Text style={screenStyles.subtitle}>
-          Enter your PIN to continue using Dai.
-        </Text>
-      </View>
+        {/* PIN Input */}
+        <View style={styles.inputWrapper}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
+            <TextInput
+              value={pin}
+              onChangeText={handlePinChange}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={4}
+              autoFocus
+              placeholder="Enter 4-digit PIN"
+              style={styles.input}
+              placeholderTextColor="#ccc"
+            />
+          </View>
+        </View>
 
-      <View
-        style={{
-          marginTop: 32,
-          gap: 16,
-        }}
-      >
-        <TextInput
-          value={pin}
-          onChangeText={handlePinChange}
-          placeholder="Enter PIN"
-          keyboardType="number-pad"
-          secureTextEntry
-          maxLength={4}
-          textAlign="center"
-          autoFocus
-          style={[
-            screenStyles.input,
-            {
-              fontSize: 24,
-              letterSpacing: 12,
-              paddingVertical: 16,
-            },
-          ]}
-        />
-
+        {/* Error Message */}
         {error ? (
-          <Text
-            style={{
-              color: colors.error,
-              textAlign: "center",
-            }}
-          >
-            {error}
-          </Text>
+          <Text style={styles.error}>{error}</Text>
         ) : null}
 
+        {/* Unlock Button */}
         <Pressable
           onPress={handleUnlock}
           disabled={checking}
           style={[
-            screenStyles.primaryButton,
-            {
-              marginTop: 8,
-              opacity: checking ? 0.5 : 1,
-            },
+            styles.button,
+            checking && styles.buttonDisabled,
           ]}
         >
-          <Text style={screenStyles.primaryButtonText}>
-            {checking ? "Checking..." : "Unlock Dai"}
+          <Text style={styles.buttonText}>
+            {checking ? "Verifying..." : "Unlock"}
           </Text>
         </Pressable>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 100,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 40,
+    lineHeight: 44,
+  },
+  inputWrapper: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: "#1a1a1a",
+    letterSpacing: 8,
+  },
+  error: {
+    color: "#E53E3E",
+    fontSize: 14,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  button: {
+    backgroundColor: "#120E01",
+    paddingVertical: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FBCC33",
+    letterSpacing: 0.3,
+  },
+});
