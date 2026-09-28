@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { setPin as savePin } from "../services/pinService";
 import { requireCurrentUserId } from "../services/currentUserService";
@@ -108,67 +109,74 @@ export function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape1]} />
-            <View style={[styles.logoShape, styles.shape2]} />
-          </View>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape3]} />
-            <View style={[styles.logoShape, styles.shape4]} />
-          </View>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>
+      {/* Dark Background Header */}
+      <LinearGradient
+        colors={['#1a1612', '#120E01']}
+        style={styles.headerGradient}
+      >
+        <Text style={styles.headerTitle}>
           {step === "create" 
-            ? "Create a 4-digit PIN to\nsecure your account" 
+            ? "Secure your account\nwith a new password" 
             : "Confirm your PIN"}
         </Text>
+        <Text style={styles.headerSubtitle}>
+          {step === "create"
+            ? "Create a strong password to secure your personal data."
+            : "Please re-enter your PIN to confirm."}
+        </Text>
+      </LinearGradient>
 
-        {/* PIN Input Boxes */}
-        <View style={styles.pinContainer}>
-          {currentPin.map((digit, index) => (
-            <View key={index} style={styles.pinBox}>
-              <TextInput
-                ref={inputRefs[index]}
-                value={digit}
-                onChangeText={(value) => handlePinChange(value, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                keyboardType="number-pad"
-                maxLength={1}
-                style={styles.pinInput}
-                secureTextEntry
-              />
-              <Text style={styles.pinDigit}>{digit || ""}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Error Message */}
-        {error ? (
-          <Text style={styles.error}>{error}</Text>
-        ) : null}
-
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
-
-        {/* Continue Button */}
-        <Pressable
-          onPress={handleContinue}
-          disabled={!isPinComplete || saving}
-          style={[
-            styles.button,
-            (!isPinComplete || saving) && styles.buttonDisabled,
-          ]}
-        >
-          <Text style={styles.buttonText}>
-            {saving ? "Creating..." : "Continue"}
+      {/* White Card Content */}
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          {/* Section Title */}
+          <Text style={styles.sectionTitle}>
+            {step === "create" ? "Password" : "Confirm password"}
           </Text>
-        </Pressable>
+          <Text style={styles.sectionSubtitle}>
+            {step === "create" 
+              ? "Enter your new password"
+              : "Confirm your new password"}
+          </Text>
+
+          {/* PIN Input Boxes */}
+          <View style={styles.pinContainer}>
+            {currentPin.map((digit, index) => (
+              <View key={index} style={styles.pinBox}>
+                <TextInput
+                  ref={inputRefs[index]}
+                  value={digit}
+                  onChangeText={(value) => handlePinChange(value, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  style={styles.pinInput}
+                  secureTextEntry
+                />
+                <View style={[styles.pinDot, digit && styles.pinDotFilled]} />
+              </View>
+            ))}
+          </View>
+
+          {/* Error Message */}
+          {error ? (
+            <Text style={styles.error}>{error}</Text>
+          ) : null}
+
+          {/* Continue Button */}
+          <Pressable
+            onPress={handleContinue}
+            disabled={!isPinComplete || saving}
+            style={[
+              styles.button,
+              (!isPinComplete || saving) && styles.buttonDisabled,
+            ]}
+          >
+            <Text style={styles.buttonText}>
+              {saving ? "Creating..." : step === "create" ? "Continue" : "Reset Password"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -177,71 +185,61 @@ export function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#120E01",
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
+  headerGradient: {
+    paddingHorizontal: 24,
     paddingTop: 80,
     paddingBottom: 40,
   },
-  logoContainer: {
-    alignSelf: "center",
-    gap: 8,
-    marginBottom: 60,
-  },
-  logoRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  logoShape: {
-    width: 36,
-    height: 36,
-    backgroundColor: "#121212",
-  },
-  shape1: {
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 10,
-    borderBottomLeftRadius: 14,
-  },
-  shape2: {
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 14,
-    borderBottomRightRadius: 18,
-    borderBottomLeftRadius: 8,
-  },
-  shape3: {
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 6,
-    borderBottomLeftRadius: 18,
-  },
-  shape4: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 18,
-    borderBottomRightRadius: 14,
-    borderBottomLeftRadius: 10,
-  },
-  title: {
+  headerTitle: {
     fontSize: 24,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    textAlign: "center",
-    marginBottom: 48,
+    fontWeight: "700",
+    color: "#FFFFFF",
     lineHeight: 32,
+    marginBottom: 12,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.7)",
+    lineHeight: 20,
+  },
+  cardContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  card: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#120E01",
+    marginBottom: 6,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "rgba(18, 14, 1, 0.6)",
+    marginBottom: 32,
   },
   pinContainer: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   pinBox: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     backgroundColor: "#F5F5F5",
-    borderRadius: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(18, 14, 1, 0.1)",
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -252,36 +250,38 @@ const styles = StyleSheet.create({
     height: "100%",
     opacity: 0,
   },
-  pinDigit: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#1a1a1a",
+  pinDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "rgba(18, 14, 1, 0.2)",
+  },
+  pinDotFilled: {
+    backgroundColor: "#120E01",
+    borderColor: "#120E01",
   },
   error: {
     color: "#E53E3E",
-    fontSize: 14,
+    fontSize: 13,
     textAlign: "center",
-    marginTop: 16,
+    marginBottom: 24,
   },
   button: {
     backgroundColor: "#120E01",
-    paddingVertical: 18,
-    borderRadius: 30,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: "auto",
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#FBCC33",
-    letterSpacing: 0.3,
   },
 });
