@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { verifyPinResetCode, sendPinResetCode } from "../services/pinRecoveryService";
 
@@ -107,77 +106,72 @@ export function PinRecoveryVerifyScreen({
 
   return (
     <View style={styles.container}>
-      {/* Dark Background Header */}
-      <LinearGradient
-        colors={['#1a1612', '#120E01']}
-        style={styles.headerGradient}
-      >
-        <Pressable onPress={onCancel} hitSlop={12} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Verify your account</Text>
-        <Text style={styles.headerSubtitle}>
-          Please enter the 6-digit verification code we sent to your email to proceed securely.
-        </Text>
-      </LinearGradient>
-
-      {/* White Card Content */}
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          {/* Code Input */}
-          <View style={styles.codeContainer}>
-            {code.map((digit, index) => (
-              <View key={index} style={styles.codeBox}>
-                <TextInput
-                  ref={inputRefs[index]}
-                  value={digit}
-                  onChangeText={(value) => handleCodeChange(value, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  style={styles.codeInput}
-                  editable={!verifying}
-                />
-                <Text style={styles.codeDigit}>{digit || ""}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Error Message */}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          {/* Success Message */}
-          {resent ? (
-            <Text style={styles.success}>Code resent successfully!</Text>
-          ) : null}
-
-          {/* Verify Button */}
-          <Pressable
-            onPress={handleVerify}
-            disabled={!isCodeComplete || verifying}
-            style={[
-              styles.button,
-              (!isCodeComplete || verifying) && styles.buttonDisabled,
-            ]}
-          >
-            {verifying ? (
-              <ActivityIndicator color="#FBCC33" />
-            ) : (
-              <Text style={styles.buttonText}>Verification</Text>
-            )}
-          </Pressable>
-
-          {/* Resend Link */}
-          <Pressable
-            onPress={handleResendCode}
-            disabled={resending}
-            style={styles.resendContainer}
-          >
-            <Text style={styles.resendText}>
-              {resending ? "Sending..." : "Don't received code? Resend Now"}
-            </Text>
-          </Pressable>
+      <View style={styles.content}>
+        {/* Title */}
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>Enter verification code</Text>
+          <Text style={styles.subtitle}>
+            We sent a 6-digit code to{"\n"}
+            <Text style={styles.email}>{email}</Text>
+          </Text>
         </View>
+
+        {/* Code Input */}
+        <View style={styles.codeContainer}>
+          {code.map((digit, index) => (
+            <View key={index} style={styles.codeBox}>
+              <TextInput
+                ref={inputRefs[index]}
+                value={digit}
+                onChangeText={(value) => handleCodeChange(value, index)}
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="number-pad"
+                maxLength={1}
+                style={styles.codeInput}
+                editable={!verifying}
+              />
+              <Text style={styles.codeDigit}>{digit || ""}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Error Message */}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {/* Success Message */}
+        {resent ? (
+          <Text style={styles.success}>Code resent successfully!</Text>
+        ) : null}
+
+        {/* Resend Link */}
+        <Pressable
+          onPress={handleResendCode}
+          disabled={resending}
+          style={styles.resendContainer}
+        >
+          <Text style={styles.resendText}>
+            {resending ? "Sending..." : "Didn't receive the code? Resend"}
+          </Text>
+        </Pressable>
+
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
+
+        {/* Verify Button */}
+        <Pressable
+          onPress={handleVerify}
+          disabled={!isCodeComplete || verifying}
+          style={[
+            styles.button,
+            (!isCodeComplete || verifying) && styles.buttonDisabled,
+          ]}
+        >
+          {verifying ? (
+            <ActivityIndicator color="#FBCC33" />
+          ) : (
+            <Text style={styles.buttonText}>Verify Code</Text>
+          )}
+        </Pressable>
       </View>
     </View>
   );
@@ -186,56 +180,49 @@ export function PinRecoveryVerifyScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#120E01",
+    backgroundColor: "#FAFAFA",
   },
-  headerGradient: {
+  content: {
+    flex: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 32,
   },
-  backButton: {
-    marginBottom: 24,
+  titleSection: {
+    marginBottom: 48,
   },
-  headerTitle: {
-    fontSize: 24,
+  title: {
+    fontSize: 26,
     fontWeight: "700",
-    color: "#FFFFFF",
-    lineHeight: 32,
+    color: "#120E01",
     marginBottom: 12,
+    letterSpacing: -0.5,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    lineHeight: 20,
+  subtitle: {
+    fontSize: 15,
+    color: "rgba(18, 14, 1, 0.6)",
+    lineHeight: 24,
   },
-  cardContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 32,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  card: {
-    flex: 1,
+  email: {
+    fontWeight: "600",
+    color: "#120E01",
   },
   codeContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 12,
-    marginBottom: 32,
+    gap: 10,
+    marginBottom: 24,
   },
   codeBox: {
     width: 48,
     height: 56,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-    borderWidth: 1,
-    borderColor: "rgba(18, 14, 1, 0.1)",
+    borderWidth: 1.5,
+    borderColor: "rgba(18, 14, 1, 0.15)",
   },
   codeInput: {
     position: "absolute",
@@ -250,33 +237,17 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#E53E3E",
-    fontSize: 13,
+    fontSize: 14,
     textAlign: "center",
-    marginTop: -16,
+    marginTop: 8,
     marginBottom: 16,
   },
   success: {
     color: "#22C55E",
-    fontSize: 13,
+    fontSize: 14,
     textAlign: "center",
-    marginTop: -16,
+    marginTop: 8,
     marginBottom: 16,
-  },
-  button: {
-    backgroundColor: "#120E01",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FBCC33",
   },
   resendContainer: {
     alignSelf: "center",
@@ -284,9 +255,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   resendText: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
     color: "#120E01",
     textDecorationLine: "underline",
+  },
+  button: {
+    backgroundColor: "#FBCC33",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FBCC33",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#120E01",
+    letterSpacing: 0.2,
   },
 });

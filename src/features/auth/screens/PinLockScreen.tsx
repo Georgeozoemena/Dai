@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View, Alert, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { verifyPin } from "../services/pinService";
 import { requireCurrentUserId } from "../services/currentUserService";
@@ -115,82 +114,85 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Dark Background Header */}
-      <LinearGradient
-        colors={['#1a1612', '#120E01']}
-        style={styles.headerGradient}
-      >
-        <Text style={styles.headerTitle}>
-          Use phone or email to{"\n"}reset your password
-        </Text>
-        <Text style={styles.headerSubtitle}>
-          Enter your email or phone to reset your password easily.
-        </Text>
-      </LinearGradient>
-
-      {/* White Card Content */}
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          {/* Section Title */}
-          <Text style={styles.sectionTitle}>Enter your password</Text>
-
-          {/* PIN Input Boxes */}
-          <View style={styles.pinContainer}>
-            {pin.map((digit, index) => (
-              <View key={index} style={styles.pinBox}>
-                <TextInput
-                  ref={inputRefs[index]}
-                  value={digit}
-                  onChangeText={(value) => handlePinChange(value, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  style={styles.pinInput}
-                  secureTextEntry
-                />
-                <View style={[styles.pinDot, digit && styles.pinDotFilled]} />
-              </View>
-            ))}
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoRow}>
+            <View style={[styles.logoShape, styles.shape1]} />
+            <View style={[styles.logoShape, styles.shape2]} />
           </View>
+          <View style={styles.logoRow}>
+            <View style={[styles.logoShape, styles.shape3]} />
+            <View style={[styles.logoShape, styles.shape4]} />
+          </View>
+        </View>
 
-          {/* Error Message */}
-          {error ? (
-            <Text style={styles.error}>{error}</Text>
-          ) : null}
+        {/* Title */}
+        <Text style={styles.title}>Enter PIN</Text>
+        <Text style={styles.subtitle}>
+          Enter your 4-digit PIN to unlock your account
+        </Text>
 
-          {/* Continue Button */}
-          <Pressable
-            onPress={handleUnlock}
-            disabled={!isPinComplete || checking}
-            style={[
-              styles.button,
-              (!isPinComplete || checking) && styles.buttonDisabled,
-            ]}
-          >
-            <Text style={styles.buttonText}>
-              {checking ? "Verifying..." : "Continue"}
+        {/* PIN Input Boxes */}
+        <View style={styles.pinContainer}>
+          {pin.map((digit, index) => (
+            <View key={index} style={styles.pinBox}>
+              <TextInput
+                ref={inputRefs[index]}
+                value={digit}
+                onChangeText={(value) => handlePinChange(value, index)}
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="number-pad"
+                maxLength={1}
+                style={styles.pinInput}
+                secureTextEntry
+              />
+              <Text style={styles.pinDigit}>{digit || ""}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Error Message */}
+        {error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : null}
+
+        {/* Forgot PIN Link */}
+        <Pressable onPress={handleForgotPin} style={styles.forgotPinContainer}>
+          <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+        </Pressable>
+
+        {/* Biometric Button (if available) */}
+        {biometricCapabilities?.isAvailable && (
+          <Pressable onPress={handleBiometricAuth} style={styles.biometricButton}>
+            <Ionicons 
+              name={biometricCapabilities.biometricType === "facial" ? "scan" : "finger-print"} 
+              size={24} 
+              color="#120E01" 
+            />
+            <Text style={styles.biometricButtonText}>
+              Use {getBiometricTypeName(biometricCapabilities.biometricType)}
             </Text>
           </Pressable>
+        )}
 
-          {/* Forgot PIN Link */}
-          <Pressable onPress={handleForgotPin} style={styles.forgotPinContainer}>
-            <Text style={styles.forgotPinText}>Forgot Password?</Text>
-          </Pressable>
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
 
-          {/* Biometric Button (if available) */}
-          {biometricCapabilities?.isAvailable && (
-            <Pressable onPress={handleBiometricAuth} style={styles.biometricButton}>
-              <Ionicons 
-                name={biometricCapabilities.biometricType === "facial" ? "scan" : "finger-print"} 
-                size={24} 
-                color="#120E01" 
-              />
-              <Text style={styles.biometricButtonText}>
-                Use {getBiometricTypeName(biometricCapabilities.biometricType)}
-              </Text>
-            </Pressable>
-          )}
-        </View>
+        {/* Continue Button */}
+        <Pressable
+          onPress={handleUnlock}
+          disabled={!isPinComplete || checking}
+          style={[
+            styles.button,
+            (!isPinComplete || checking) && styles.buttonDisabled,
+          ]}
+        >
+          <Text style={styles.buttonText}>
+            {checking ? "Verifying..." : "Continue"}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -199,56 +201,81 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#FAFAFA",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 32,
+  },
+  logoContainer: {
+    alignSelf: "center",
+    gap: 8,
+    marginBottom: 80,
+  },
+  logoRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  logoShape: {
+    width: 40,
+    height: 40,
     backgroundColor: "#120E01",
   },
-  headerGradient: {
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
+  shape1: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 16,
   },
-  headerTitle: {
-    fontSize: 24,
+  shape2: {
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 8,
+  },
+  shape3: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 6,
+    borderBottomLeftRadius: 20,
+  },
+  shape4: {
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 10,
+  },
+  title: {
+    fontSize: 26,
     fontWeight: "700",
-    color: "#FFFFFF",
-    lineHeight: 32,
-    marginBottom: 12,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    lineHeight: 20,
-  },
-  cardContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 32,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  card: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
     color: "#120E01",
-    marginBottom: 24,
+    textAlign: "center",
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: "rgba(18, 14, 1, 0.6)",
+    textAlign: "center",
+    marginBottom: 48,
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
   pinContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
-    marginBottom: 32,
+    gap: 12,
+    marginBottom: 24,
   },
   pinBox: {
     width: 56,
     height: 56,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(18, 14, 1, 0.1)",
+    borderWidth: 1.5,
+    borderColor: "rgba(18, 14, 1, 0.15)",
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -259,38 +286,17 @@ const styles = StyleSheet.create({
     height: "100%",
     opacity: 0,
   },
-  pinDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "rgba(18, 14, 1, 0.2)",
-  },
-  pinDotFilled: {
-    backgroundColor: "#120E01",
-    borderColor: "#120E01",
+  pinDigit: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#120E01",
   },
   error: {
     color: "#E53E3E",
-    fontSize: 13,
+    fontSize: 14,
     textAlign: "center",
+    marginTop: 8,
     marginBottom: 16,
-  },
-  button: {
-    backgroundColor: "#120E01",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FBCC33",
   },
   forgotPinContainer: {
     alignSelf: "center",
@@ -299,8 +305,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   forgotPinText: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
     color: "#120E01",
     textDecorationLine: "underline",
   },
@@ -312,13 +318,36 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(18, 14, 1, 0.06)",
-    marginTop: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "rgba(18, 14, 1, 0.15)",
+    marginTop: 12,
     alignSelf: "center",
   },
   biometricButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#120E01",
+  },
+  button: {
+    backgroundColor: "#FBCC33",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FBCC33",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#120E01",
+    letterSpacing: 0.2,
   },
 });
