@@ -1,5 +1,6 @@
 import type { SavingsGoal } from "../../../types/savingsGoal";
 import { savingsGoalRepository } from "../../../database/savingsGoal";
+import { trackEvent } from "../../../services/analytics/analyticsService";
 
 export async function getSavingsGoals(
   accountId: string,
@@ -17,6 +18,9 @@ export async function createSavingsGoal(
   goal: SavingsGoal,
 ): Promise<SavingsGoal> {
   await savingsGoalRepository.createSavingsGoal(goal);
+
+  trackEvent("goal_created");
+
   return goal;
 }
 
@@ -47,4 +51,6 @@ export async function addToSavingsGoal(
   goal.updatedAt = new Date().toISOString();
 
   await savingsGoalRepository.updateSavingsGoal(goal);
+
+  trackEvent("goal_contribution");
 }

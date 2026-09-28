@@ -61,7 +61,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="home"
-              inactiveIcon="home-outline"
+              inactiveIcon="home"
             />
           ),
         }}
@@ -77,7 +77,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="wallet"
-              inactiveIcon="wallet-outline"
+              inactiveIcon="wallet"
             />
           ),
         }}
@@ -93,7 +93,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="list"
-              inactiveIcon="list-outline"
+              inactiveIcon="list"
             />
           ),
         }}
@@ -108,7 +108,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="calendar"
-              inactiveIcon="calendar-outline"
+              inactiveIcon="calendar"
             />
           ),
         }}
@@ -123,7 +123,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="pie-chart"
-              inactiveIcon="pie-chart-outline"
+              inactiveIcon="pie-chart"
             />
           ),
         }}

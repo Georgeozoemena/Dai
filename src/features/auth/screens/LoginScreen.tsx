@@ -1,13 +1,19 @@
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const GOOGLE_MARK =
   "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg";
@@ -16,155 +22,193 @@ export function LoginScreen() {
   const { isReady, promptAsync } = useGoogleAuth();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape1]} />
-            <View style={[styles.logoShape, styles.shape2]} />
-          </View>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape3]} />
-            <View style={[styles.logoShape, styles.shape4]} />
-          </View>
-        </View>
-
-        {/* Welcome Text */}
-        <View style={styles.textContainer}>
-          <Text style={styles.welcomeText}>Welcome to</Text>
-          <Text style={styles.appName}>Denari</Text>
-        </View>
-
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          {/* Google Sign In Button */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Continue with Google"
-            disabled={!isReady}
-            onPress={() => promptAsync()}
-            style={({ pressed }) => [
-              styles.googleButton,
-              !isReady && styles.buttonDisabled,
-              pressed && isReady && styles.buttonPressed,
-            ]}
-          >
-            {!isReady ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <>
-                <Image source={{ uri: GOOGLE_MARK }} style={styles.googleMark} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </>
-            )}
-          </Pressable>
-        </View>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+    >
+      {/* Hero Section with Full-Width Image */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={require("../../../../assets/old-man.jpg")}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
+        {/* Gradient overlay to fade to white */}
+        <LinearGradient
+          colors={["transparent", "rgba(255,255,255,0.3)", "rgba(255,255,255,0.7)", "#FFFFFF"]}
+          locations={[0, 0.5, 0.8, 1]}
+          style={styles.gradientOverlay}
+        />
       </View>
-    </View>
+
+      {/* Content Section */}
+      <View style={styles.contentSection}>
+        {/* Tagline - Left Aligned */}
+        <View style={styles.taglineContainer}>
+          <Text style={styles.taglineText}>
+            Track your{"\n"}
+            <Text style={styles.taglineHighlight}>finances</Text> in seconds
+          </Text>
+        </View>
+
+        {/* Spacer to push buttons to bottom */}
+        <View style={{ flex: 1, minHeight: 20 }} />
+
+      {/* Bottom Section - Buttons */}
+      <View style={styles.bottomSection}>
+        {/* Google Button */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Google"
+          disabled={!isReady}
+          onPress={() => promptAsync()}
+          style={({ pressed }) => [
+            styles.button,
+            styles.googleButton,
+            !isReady && styles.buttonDisabled,
+            pressed && isReady && styles.buttonPressed,
+          ]}
+        >
+          {!isReady ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <>
+              <Image source={{ uri: GOOGLE_MARK }} style={styles.buttonIcon} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
+        </Pressable>
+
+        {/* Apple Button (Disabled/Coming Soon) */}
+        <Pressable
+          disabled
+          style={[styles.button, styles.appleButton, styles.buttonDisabled]}
+        >
+          <Ionicons name="logo-apple" size={22} color="#000" />
+          <Text style={styles.appleButtonText}>Continue with Apple</Text>
+        </Pressable>
+
+        {/* Email Button - Commented out for now */}
+        <Pressable
+          disabled
+          style={[styles.button, styles.emailButton, styles.buttonDisabled]}
+        >
+          <Ionicons name="mail-outline" size={20} color="#666" />
+          <Text style={styles.emailButtonText}>Continue with Email</Text>
+        </Pressable>
+
+        {/* Footer text */}
+        <Text style={styles.footerText}>
+          By continuing, you agree to our Terms & Privacy Policy
+        </Text>
+      </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#FFFFFF",
   },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+  scrollContent: {
+    flexGrow: 1,
   },
-  logoContainer: {
-    gap: 12,
-    marginBottom: 60,
-  },
-  logoRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  logoShape: {
-    width: 48,
-    height: 48,
-    backgroundColor: "#1a1a1a",
-  },
-  shape1: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 16,
-    borderBottomLeftRadius: 20,
-  },
-  shape2: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 24,
-    borderBottomLeftRadius: 12,
-  },
-  shape3: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 8,
-    borderBottomLeftRadius: 24,
-  },
-  shape4: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 16,
-  },
-  textContainer: {
-    alignItems: "center",
-    marginBottom: 80,
-  },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: "500",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-  appName: {
-    fontSize: 42,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  buttonContainer: {
+  imageContainer: {
     width: "100%",
-    paddingHorizontal: 20,
+    height: SCREEN_HEIGHT * 0.45, // 45% of screen height
+    backgroundColor: "#F5F5F5",
+    position: "relative",
+  },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+  gradientOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "40%", // Fade starts from bottom 40% of image
+  },
+  contentSection: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  taglineContainer: {
+    width: "100%",
+    marginBottom: 40, // Standard mobile spacing before buttons
+  },
+  taglineText: {
+    fontSize: 32,
+    fontWeight: "600",
+    color: "#1a1a1a5d",
+    textAlign: "left",
+    lineHeight: 40,
+  },
+  taglineHighlight: {
+    fontWeight: "800",
+    color: "#121212",
+  },
+  bottomSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    gap: 12,
+  },
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: 16,
+    borderRadius: 30,
   },
   googleButton: {
-    marginTop: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 14,
     backgroundColor: "#120E01",
-    paddingVertical: 22,
-    borderRadius: 36,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  },
+  appleButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "#E5E5E5",
+  },
+  emailButton: {
+    backgroundColor: "#F5F5F5",
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   buttonPressed: {
     opacity: 0.85,
     transform: [{ scale: 0.98 }],
   },
-  googleMark: {
-    width: 24,
-    height: 24,
+  buttonIcon: {
+    width: 22,
+    height: 22,
   },
   googleButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#FBCC33",
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  appleButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000",
+  },
+  emailButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666666",
+  },
+  footerText: {
+    fontSize: 12,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 16,
+    paddingHorizontal: 20,
   },
 });

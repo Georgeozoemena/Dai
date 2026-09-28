@@ -15,6 +15,7 @@ import type { Profile } from "../../../types/profile";
 import { createProfile } from "../services/profileService";
 import { requireCurrentUserId } from "../../auth/services/currentUserService";
 import { useAuthStore } from "../../../store/auth/authStore";
+import { generateId } from "../../../utils/id";
 
 interface ProfileScreenProps {
   onComplete?: (profile: Profile) => void;
@@ -66,7 +67,7 @@ export function ProfileScreen({
       const now = new Date().toISOString();
 
       const profile: Profile = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         userId,
 
         name: name.trim(),

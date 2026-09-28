@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+.claude
+.vscode
+
 # Native
 .kotlin/
 *.orig.*
@@ -42,3 +45,5 @@ yarn-error.*
 
 
 .env
+
+CLAUDE.md

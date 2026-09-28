@@ -1,15 +1,47 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { router } from "expo-router";
-import { resetDatabase } from "../database/web/database";
+import { resetDatabase } from "../database/reset/resetDatabase";
 import { colors, screenStyles } from "../theme";
+
+function confirmReset(): Promise<boolean> {
+  const message = "This will delete all data. Are you sure?";
+
+  if (Platform.OS === "web") {
+    return Promise.resolve(
+      typeof window !== "undefined" &&
+        window.confirm(message),
+    );
+  }
+
+  return new Promise((resolve) => {
+    Alert.alert("Reset Database", message, [
+      {
+        text: "Cancel",
+        style: "cancel",
+        onPress: () => resolve(false),
+      },
+      {
+        text: "Reset",
+        style: "destructive",
+        onPress: () => resolve(true),
+      },
+    ]);
+  });
+}
 
 export default function ResetDatabaseRoute() {
   const [resetting, setResetting] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleReset = async () => {
-    if (!confirm("This will delete all data. Are you sure?")) {
+    if (!(await confirmReset())) {
       return;
     }
 
@@ -21,8 +53,10 @@ export default function ResetDatabaseRoute() {
 
       setMessage("Database reset successfully! Redirecting...");
 
-      // Clear localStorage for PIN and account store
-      localStorage.clear();
+      // Clear localStorage for PIN and account store (web only)
+      if (Platform.OS === "web") {
+        localStorage.clear();
+      }
 
       setTimeout(() => {
         router.replace("/");

@@ -2,6 +2,7 @@ import type { Transaction } from "../../../types/transaction";
 import {
   transactionRepository,
 } from "../../../database/transaction";
+import { trackEvent } from "../../../services/analytics/analyticsService";
 
 export async function getTransactions(
   accountId: string,
@@ -41,4 +42,6 @@ export async function deleteTransaction(
   id: string,
 ) {
   await transactionRepository.deleteTransaction(id);
+
+  trackEvent("transaction_deleted");
 }

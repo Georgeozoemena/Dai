@@ -8,17 +8,27 @@
     "userInterfaceStyle": "light",
     "scheme": "dai",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to unlock Dai and access your financial data securely."
+      }
     },
     "android": {
       "package": "com.dai.finance",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -27,13 +37,34 @@
     "plugins": [
       "expo-sqlite",
       "expo-secure-store",
-      "expo-sharing",
-      "expo-web-browser"
+      "expo-local-authentication",
+      [
+        "expo-sharing",
+        {
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": [
+              "application/pdf",
+              "image/jpeg",
+              "image/png"
+            ],
+            "multipleShareMimeTypes": [
+              "application/pdf",
+              "image/jpeg",
+              "image/png"
+            ]
+          }
+        }
+      ],
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
         "projectId": "39f95537-c3b5-44f3-b790-f09203768ffc"
-      }
+      },
+      "EXPO_PUBLIC_BACKEND_URL": "https://dai-backend.onrender.com",
+      "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "900527916230-v37hfl119bs0gld3l91berjl6t3veo8a.apps.googleusercontent.com"
     }
   }
 }

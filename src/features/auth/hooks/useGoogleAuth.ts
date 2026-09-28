@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { router } from "expo-router";
+import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
@@ -10,7 +11,9 @@ import { useAuthStore } from "../../../store/auth/authStore";
 
 WebBrowser.maybeCompleteAuthSession();
 
+// Read from app config first so cloud builds never depend on local .env files.
 const webClientId =
+  Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
   process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 const redirectUri =

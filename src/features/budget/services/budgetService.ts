@@ -6,6 +6,7 @@ import type {
 import {
   budgetRepository,
 } from "../../../database/budget";
+import { trackEvent } from "../../../services/analytics/analyticsService";
 
 export async function getBudget(
   accountId: string,
@@ -31,6 +32,8 @@ export async function createBudget(
   await budgetRepository.createBudget(
     budget,
   );
+
+  trackEvent("budget_created");
 
   return budget;
 }

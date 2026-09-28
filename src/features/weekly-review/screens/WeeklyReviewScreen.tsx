@@ -9,6 +9,8 @@ import {
   TextInput,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
+
 import {
   formatWeekRange,
   getNextWeek,
@@ -32,7 +34,7 @@ import {
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
-import { colors, screenStyles } from "../../../theme";
+import { colors } from "../../../theme";
 
 export function WeeklyReviewScreen() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
@@ -197,308 +199,623 @@ export function WeeklyReviewScreen() {
 
   return (
     <ScrollView
-      style={screenStyles.root}
-      contentContainerStyle={screenStyles.scrollContent}
+      style={{ flex: 1, 
+        backgroundColor: "#f5f5f5" 
+      }}
+      contentContainerStyle={{
+        paddingHorizontal: 20,
+        paddingTop: 24,
+        paddingBottom: 40,
+      }}
+      showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-
-      <View>
-        <Text style={screenStyles.title}>Weekly Review</Text>
-
-        <Text style={screenStyles.subtitle}>
-          Take a moment to understand your financial week.
+      <View style={{ marginBottom: 24 }}>
+        <Text
+          style={{
+            fontSize: 32,
+            fontWeight: "700",
+            color: "#1a1a1a",
+            marginBottom: 8,
+          }}
+        >
+          Weekly Review
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: "#999",
+            lineHeight: 22,
+          }}
+        >
+          Reflect on your financial journey
         </Text>
       </View>
 
-      {/* Week Navigation */}
-
+      {/* Week Navigation Card */}
       <View
         style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          padding: 20,
+          marginBottom: 24,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 3,
+          elevation: 2,
         }}
       >
         <Pressable
           onPress={handlePreviousWeek}
           style={{
-            paddingHorizontal: 14,
-            paddingVertical: 10,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: "#f5f5f5",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
+          <Ionicons name="chevron-back" size={20} color="#1a1a1a" />
+        </Pressable>
+
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#999",
+              marginBottom: 4,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            Week
+          </Text>
           <Text
             style={{
               fontSize: 16,
               fontWeight: "600",
-              color: colors.text,
+              color: "#1a1a1a",
             }}
           >
-            ← Previous
+            {formatWeekRange(weekStart, weekEnd)}
           </Text>
-        </Pressable>
-
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: "600",
-            textAlign: "center",
-            color: colors.text,
-          }}
-        >
-          {formatWeekRange(weekStart, weekEnd)}
-        </Text>
+        </View>
 
         <Pressable
           onPress={handleNextWeek}
           style={{
-            paddingHorizontal: 14,
-            paddingVertical: 10,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: "#f5f5f5",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: colors.text,
-            }}
-          >
-            Next →
-          </Text>
+          <Ionicons name="chevron-forward" size={20} color="#1a1a1a" />
         </Pressable>
       </View>
 
-      {/* Placeholder */}
-
-      <View style={{ gap: 12 }}>
-        <Text style={screenStyles.sectionTitle}>This Week</Text>
-
-        {loading ? (
-          <View style={{ alignItems: "center", paddingVertical: 20 }}>
-            <ActivityIndicator color={colors.secondary} />
-            <Text style={{ marginTop: 12, color: colors.textSecondary }}>
-              Loading weekly summary...
-            </Text>
-          </View>
-        ) : (
+      {loading ? (
+        <View style={{ alignItems: "center", paddingVertical: 40 }}>
+          <ActivityIndicator color={colors.secondary} />
+          <Text style={{ marginTop: 12, color: "#999" }}>
+            Loading weekly summary...
+          </Text>
+        </View>
+      ) : (
+        <>
+          {/* Stats Grid */}
           <View
             style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
               gap: 12,
+              marginBottom: 24,
             }}
           >
-            <View style={screenStyles.card}>
-              <Text style={{ color: colors.textSecondary }}>Income</Text>
-
+            {/* Income */}
+            <View
+              style={{
+                flex: 1,
+                minWidth: "47%",
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 16,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 3,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="arrow-down" size={20} color="#10b981" />
+              </View>
+              <Text style={{ fontSize: 13, color: "#999", marginBottom: 4 }}>
+                Income
+              </Text>
               <Text
                 style={{
-                  marginTop: 6,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: "700",
-                  color: colors.success,
+                  color: "#10b981",
                 }}
               >
                 {formatCurrency(weeklyIncome, currencyCode)}
               </Text>
             </View>
 
-            <View style={screenStyles.card}>
-              <Text style={{ color: colors.textSecondary }}>Spent</Text>
-
+            {/* Spent */}
+            <View
+              style={{
+                flex: 1,
+                minWidth: "47%",
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 16,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 3,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(239, 68, 68, 0.1)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="arrow-up" size={20} color="#ef4444" />
+              </View>
+              <Text style={{ fontSize: 13, color: "#999", marginBottom: 4 }}>
+                Spent
+              </Text>
               <Text
                 style={{
-                  marginTop: 6,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: "700",
-                  color: colors.text,
+                  color: "#1a1a1a",
                 }}
               >
                 {formatCurrency(weeklySpent, currencyCode)}
               </Text>
             </View>
 
-            <View style={screenStyles.card}>
-              <Text style={{ color: colors.textSecondary }}>Saved</Text>
-
+            {/* Saved */}
+            <View
+              style={{
+                flex: 1,
+                minWidth: "47%",
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 16,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 3,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(251, 204, 51, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="wallet" size={20} color={colors.secondary} />
+              </View>
+              <Text style={{ fontSize: 13, color: "#999", marginBottom: 4 }}>
+                Saved
+              </Text>
               <Text
                 style={{
-                  marginTop: 6,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: "700",
-                  color: colors.text,
+                  color: weeklySaved >= 0 ? "#10b981" : "#ef4444",
                 }}
               >
                 {formatCurrency(weeklySaved, currencyCode)}
               </Text>
             </View>
 
-            <View style={screenStyles.card}>
-              <Text style={{ color: colors.textSecondary }}>Entries</Text>
-
+            {/* Entries */}
+            <View
+              style={{
+                flex: 1,
+                minWidth: "47%",
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 16,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 3,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(139, 127, 214, 0.1)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="receipt" size={20} color="#8B7FD6" />
+              </View>
+              <Text style={{ fontSize: 13, color: "#999", marginBottom: 4 }}>
+                Transactions
+              </Text>
               <Text
                 style={{
-                  marginTop: 6,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: "700",
-                  color: colors.text,
+                  color: "#1a1a1a",
                 }}
               >
                 {weeklyEntries}
               </Text>
             </View>
           </View>
-        )}
-        <View style={{ gap: 14 }}>
-          <Text style={screenStyles.sectionTitle}>Spending by Category</Text>
 
-          {categorySummaries.length === 0 ? (
-            <Text style={{ color: colors.textSecondary }}>
-              No expenses recorded this week.
-            </Text>
-          ) : (
-            <View style={[screenStyles.card, { gap: 14 }]}>
-              {categorySummaries.map((item) => {
-                const percentage =
-                  weeklySpent > 0 ? (item.amount / weeklySpent) * 100 : 0;
+          {/* Category Spending */}
+          {categorySummaries.length > 0 && (
+            <View style={{ marginBottom: 24 }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: "#1a1a1a",
+                  marginBottom: 16,
+                }}
+              >
+                Top Categories
+              </Text>
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  gap: 20,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 3,
+                  elevation: 2,
+                }}
+              >
+                {categorySummaries.slice(0, 5).map((item) => {
+                  const percentage =
+                    weeklySpent > 0 ? (item.amount / weeklySpent) * 100 : 0;
 
-                return (
-                  <View key={item.category} style={{ gap: 8 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "600",
-                          color: colors.text,
-                        }}
-                      >
-                        {item.category}
-                      </Text>
-
-                      <Text
-                        style={{
-                          fontWeight: "600",
-                          color: colors.text,
-                        }}
-                      >
-                        {formatCurrency(item.amount, currencyCode)}
-                      </Text>
-                    </View>
-
-                    {/* Progress bar */}
-
-                    <View
-                      style={{
-                        height: 8,
-                        backgroundColor: colors.border,
-                        borderRadius: 10,
-                        overflow: "hidden",
-                      }}
-                    >
+                  return (
+                    <View key={item.category} style={{ gap: 10 }}>
                       <View
                         style={{
-                          width: `${percentage}%`,
-                          height: "100%",
-                          backgroundColor: colors.secondary,
-                          borderRadius: 10,
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
-                      />
-                    </View>
+                      >
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            fontWeight: "600",
+                            color: "#1a1a1a",
+                          }}
+                        >
+                          {item.category}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            fontWeight: "700",
+                            color: "#1a1a1a",
+                          }}
+                        >
+                          {formatCurrency(item.amount, currencyCode)}
+                        </Text>
+                      </View>
 
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      {percentage.toFixed(0)}% of your weekly spending
-                    </Text>
-                  </View>
-                );
-              })}
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#f5f5f5",
+                          borderRadius: 3,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: `${percentage}%`,
+                            height: "100%",
+                            backgroundColor: colors.secondary,
+                            borderRadius: 3,
+                          }}
+                        />
+                      </View>
+
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: "#999",
+                        }}
+                      >
+                        {percentage.toFixed(0)}% of weekly spending
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           )}
-        </View>
-        <View style={{ gap: 16 }}>
-          <View>
-            <Text style={screenStyles.sectionTitle}>Weekly Reflection</Text>
 
+          {/* Reflection Section */}
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
-                marginTop: 4,
-                color: colors.textSecondary,
+                fontSize: 18,
+                fontWeight: "600",
+                color: "#1a1a1a",
+                marginBottom: 8,
               }}
             >
-              Take a moment to reflect on your financial week.
+              Weekly Reflection
             </Text>
-          </View>
-
-          {/* Question 1 */}
-
-          <View style={{ gap: 8 }}>
-            <Text style={screenStyles.label}>
-              What went well financially this week?
-            </Text>
-
-            <TextInput
-              value={reflectionOne}
-              onChangeText={setReflectionOne}
-              placeholder="Write your thoughts..."
-              multiline
-              style={[screenStyles.input, screenStyles.inputMultiline]}
-            />
-          </View>
-
-          {/* Question 2 */}
-
-          <View style={{ gap: 8 }}>
-            <Text style={screenStyles.label}>
-              What could you improve next week?
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#999",
+                marginBottom: 20,
+                lineHeight: 20,
+              }}
+            >
+              Take a moment to reflect on your financial decisions
             </Text>
 
-            <TextInput
-              value={reflectionTwo}
-              onChangeText={setReflectionTwo}
-              placeholder="Write your thoughts..."
-              multiline
-              style={[screenStyles.input, screenStyles.inputMultiline]}
-            />
+            <View style={{ gap: 20 }}>
+              {/* Question 1 */}
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 3,
+                  elevation: 2,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 10,
+                    }}
+                  >
+                    <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: "#1a1a1a",
+                      flex: 1,
+                    }}
+                  >
+                    What went well financially?
+                  </Text>
+                </View>
+                <TextInput
+                  value={reflectionOne}
+                  onChangeText={setReflectionOne}
+                  placeholder="Share your wins..."
+                  placeholderTextColor="#ccc"
+                  multiline
+                  style={{
+                    fontSize: 15,
+                    color: "#1a1a1a",
+                    minHeight: 80,
+                    textAlignVertical: "top",
+                    lineHeight: 22,
+                  }}
+                />
+              </View>
+
+              {/* Question 2 */}
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 3,
+                  elevation: 2,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: "rgba(251, 204, 51, 0.15)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 10,
+                    }}
+                  >
+                    <Ionicons name="trending-up" size={16} color={colors.secondary} />
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: "#1a1a1a",
+                      flex: 1,
+                    }}
+                  >
+                    What could you improve?
+                  </Text>
+                </View>
+                <TextInput
+                  value={reflectionTwo}
+                  onChangeText={setReflectionTwo}
+                  placeholder="Areas to work on..."
+                  placeholderTextColor="#ccc"
+                  multiline
+                  style={{
+                    fontSize: 15,
+                    color: "#1a1a1a",
+                    minHeight: 80,
+                    textAlignVertical: "top",
+                    lineHeight: 22,
+                  }}
+                />
+              </View>
+
+              {/* Question 3 */}
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 3,
+                  elevation: 2,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: "rgba(139, 127, 214, 0.1)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 10,
+                    }}
+                  >
+                    <Ionicons name="flag" size={16} color="#8B7FD6" />
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: "#1a1a1a",
+                      flex: 1,
+                    }}
+                  >
+                    Next week's goal?
+                  </Text>
+                </View>
+                <TextInput
+                  value={reflectionThree}
+                  onChangeText={setReflectionThree}
+                  placeholder="Set your intention..."
+                  placeholderTextColor="#ccc"
+                  multiline
+                  style={{
+                    fontSize: 15,
+                    color: "#1a1a1a",
+                    minHeight: 80,
+                    textAlignVertical: "top",
+                    lineHeight: 22,
+                  }}
+                />
+              </View>
+            </View>
           </View>
 
-          {/* Question 3 */}
-
-          <View style={{ gap: 8 }}>
-            <Text style={screenStyles.label}>
-              What is one financial goal for next week?
-            </Text>
-
-            <TextInput
-              value={reflectionThree}
-              onChangeText={setReflectionThree}
-              placeholder="Write your thoughts..."
-              multiline
-              style={[screenStyles.input, screenStyles.inputMultiline]}
-            />
-          </View>
-
-          {/* Save */}
-
+          {/* Save Button */}
           <Pressable
             onPress={handleSaveReview}
             disabled={savingReview}
-            style={[
-              screenStyles.primaryButton,
-              { opacity: savingReview ? 0.5 : 1 },
-            ]}
+            style={{
+              backgroundColor: colors.secondary,
+              paddingVertical: 16,
+              borderRadius: 16,
+              alignItems: "center",
+              opacity: savingReview ? 0.6 : 1,
+              shadowColor: colors.secondary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
           >
-            <Text style={screenStyles.primaryButtonText}>
-              {savingReview ? "Saving..." : "Save Weekly Review"}
+            <Text
+              style={{
+                color: colors.primary,
+                fontSize: 16,
+                fontWeight: "700",
+                letterSpacing: 0.3,
+              }}
+            >
+              {savingReview ? "Saving..." : "Save Review"}
             </Text>
           </Pressable>
-        </View>
-      </View>
+        </>
+      )}
     </ScrollView>
   );
 }

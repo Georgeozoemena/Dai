@@ -112,6 +112,13 @@ export default function RootLayout() {
       />
 
       <Stack.Screen
+        name="handle-share"
+        options={{
+          title: "Save as Receipt",
+        }}
+      />
+
+      <Stack.Screen
         name="create-goal"
         options={{
           title: "Create Savings Goal",
@@ -157,6 +164,20 @@ export default function RootLayout() {
         name="settings/export"
         options={{
           title: "Export Transactions",
+        }}
+      />
+
+      <Stack.Screen
+        name="coach"
+        options={{
+          title: "Dai Coach",
+        }}
+      />
+
+      <Stack.Screen
+        name="budget-report"
+        options={{
+          title: "Budget Report",
         }}
       />
     </Stack>

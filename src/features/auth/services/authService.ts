@@ -1,4 +1,9 @@
-const API_URL = "http://localhost:5000";
+import Constants from "expo-constants";
+
+const API_URL =
+  Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL ||
+  process.env.EXPO_PUBLIC_BACKEND_URL ||
+  "http://localhost:5000";
 
 export async function authenticateWithGoogle(
   idToken: string,

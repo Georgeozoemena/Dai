@@ -87,12 +87,164 @@ export function TransactionsScreen() {
 
   if (!currentAccountId) {
     return (
-      <View style={screenStyles.centered}>
-        <Text style={screenStyles.title}>No account selected</Text>
+      <View style={{ flex: 1, backgroundColor: "#FEFDFB" }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 40,
+            paddingBottom: 80,
+          }}
+        >
+          {/* Activity/Receipt Ghost Illustration */}
+          <View
+            style={{
+              alignItems: "center",
+              marginBottom: 40,
+            }}
+          >
+            {/* Decorative elements */}
+            <View
+              style={{
+                position: "absolute",
+                left: -60,
+                top: 30,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 60,
+                  backgroundColor: "#E8E5E0",
+                  borderRadius: 20,
+                }}
+              />
+            </View>
 
-        <Text style={[screenStyles.subtitle, { textAlign: "center" }]}>
-          Select an account to view your transactions.
-        </Text>
+            <View
+              style={{
+                position: "absolute",
+                right: -60,
+                top: 30,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 60,
+                  backgroundColor: "#E8E5E0",
+                  borderRadius: 20,
+                }}
+              />
+            </View>
+
+            {/* Blue activity/receipt ghost */}
+            <View
+              style={{
+                width: 140,
+                height: 140,
+                backgroundColor: "#56CCF2",
+                borderRadius: 70,
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {/* Curious eyes (one raised) */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 24,
+                  marginTop: 20,
+                  alignItems: "flex-end",
+                }}
+              >
+                <View
+                  style={{
+                    width: 16,
+                    height: 22,
+                    backgroundColor: "#1a1a1a",
+                    borderRadius: 8,
+                    marginBottom: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 16,
+                    height: 18,
+                    backgroundColor: "#1a1a1a",
+                    borderRadius: 8,
+                  }}
+                />
+              </View>
+
+              {/* Surprised mouth (O shape) */}
+              <View
+                style={{
+                  width: 16,
+                  height: 16,
+                  backgroundColor: "transparent",
+                  borderWidth: 3,
+                  borderColor: "#1a1a1a",
+                  borderRadius: 8,
+                  marginTop: 16,
+                }}
+              />
+
+              {/* Wave bottom */}
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: -1,
+                  left: 0,
+                  right: 0,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                {[...Array(4)].map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: 28,
+                      height: 20,
+                      backgroundColor: "#56CCF2",
+                      borderBottomLeftRadius: 20,
+                      borderBottomRightRadius: 20,
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "600",
+              color: "#1a1a1a",
+              textAlign: "center",
+              marginBottom: 12,
+              letterSpacing: -0.3,
+            }}
+          >
+            No account selected
+          </Text>
+          <Text
+            style={{
+              fontSize: 15,
+              color: "#999999",
+              textAlign: "center",
+              lineHeight: 22,
+              maxWidth: 280,
+            }}
+          >
+            You have not selected any account yet. Select an account to view your transactions.
+          </Text>
+        </View>
       </View>
     );
   }

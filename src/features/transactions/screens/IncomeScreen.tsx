@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router, useNavigation } from "expo-router";
 import {
   Pressable,
   ScrollView,
@@ -7,6 +8,7 @@ import {
   View,
   Modal,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 
 import { AmountInput } from "../components/AmountInput";
@@ -18,7 +20,15 @@ import {
 } from "../../accounts/services/accountService";
 import { getProfile } from "../../onboarding/services/profileService";
 import { createIncome } from "../services/incomeService";
+import { trackEvent } from "../../../services/analytics/analyticsService";
 import { colors, screenStyles } from "../../../theme";
+
+interface PendingIncome {
+  amount: number;
+  category: string;
+  description?: string;
+  date: string;
+}
 
 export function IncomeScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -34,6 +44,8 @@ export function IncomeScreen() {
   const [currentAccount, setCurrentAccountData] = useState<Account | null>(
     null,
   );
+  const [pendingIncomes, setPendingIncomes] = useState<PendingIncome[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -79,6 +91,55 @@ export function IncomeScreen() {
     loadAccount();
   }, [currentAccountId]);
 
+  // Intercept Stack header back button
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      const hasUnsavedIncomes =
+        pendingIncomes.length > 0 ||
+        amount ||
+        category ||
+        description;
+
+      // If no unsaved data, allow navigation
+      if (!hasUnsavedIncomes) {
+        return;
+      }
+
+      // Prevent default navigation
+      e.preventDefault();
+
+      // Show confirmation dialog
+      Alert.alert(
+        "Discard incomes?",
+        "You have unsaved income information. Are you sure you want to leave?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Discard & Leave",
+            style: "destructive",
+            onPress: () => {
+              // Clear all data
+              setPendingIncomes([]);
+              setAmount("");
+              setCategory("");
+              setDescription("");
+
+              // Allow navigation to proceed
+              navigation.dispatch(e.data.action);
+            },
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, pendingIncomes, amount, category, description]);
+
   const validateForm = () => {
     if (!currentAccountId) {
       return "Please select an account.";
@@ -101,32 +162,122 @@ export function IncomeScreen() {
     return null;
   };
 
-  const handleSubmit = async () => {
-    const error = validateForm();
+  const validateCurrentIncome = () => {
+    if (!amount) {
+      return "Please enter an amount.";
+    }
+
+    const numericAmount = Number(amount);
+
+    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+      return "Amount must be greater than 0.";
+    }
+
+    if (!category.trim()) {
+      return "Please enter an income category.";
+    }
+
+    return null;
+  };
+
+  const handleAddAnotherIncome = () => {
+    const error = validateCurrentIncome();
 
     if (error) {
       console.log("VALIDATION ERROR:", error);
+      return;
+    }
 
+    const newIncome: PendingIncome = {
+      amount: Number(amount),
+      category: category.trim(),
+      description: description.trim() || undefined,
+      date,
+    };
+
+    setPendingIncomes((currentIncomes) => [...currentIncomes, newIncome]);
+
+    // Reset the form for the next income
+    setAmount("");
+    setCategory("");
+    setDescription("");
+
+    console.log("INCOME ADDED TO LIST:", newIncome);
+  };
+
+  const handleRemoveIncome = (indexToRemove: number) => {
+    setPendingIncomes((currentIncomes) =>
+      currentIncomes.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const saveIncomes = async (incomesToSave: PendingIncome[]) => {
+    if (!currentAccountId) {
       return;
     }
 
     try {
-      const transaction = await createIncome({
-        accountId: currentAccountId!,
-        amount: Number(amount),
-        category: category.trim(),
-        description,
-        date,
-      });
+      setLoading(true);
 
-      console.log("INCOME CREATED:", transaction);
+      for (const income of incomesToSave) {
+        await createIncome({
+          accountId: currentAccountId,
+          amount: income.amount,
+          category: income.category,
+          description: income.description,
+          date: income.date,
+        });
+      }
 
+      console.log(`${incomesToSave.length} INCOME(S) SAVED SUCCESSFULLY`);
+
+      setPendingIncomes([]);
       setAmount("");
       setCategory("");
       setDescription("");
+
+      router.back();
     } catch (error) {
-      console.error("FAILED TO CREATE INCOME:", error);
+      console.error("FAILED TO ADD INCOMES:", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!currentAccountId) {
+      console.log("VALIDATION ERROR: Please select an account.");
+      return;
+    }
+
+    const incomesToSave = [...pendingIncomes];
+
+    // Check whether the current form contains an income
+    const hasCurrentIncome = amount || category || description;
+
+    if (hasCurrentIncome) {
+      const error = validateCurrentIncome();
+
+      if (error) {
+        console.log("VALIDATION ERROR:", error);
+        return;
+      }
+
+      incomesToSave.push({
+        amount: Number(amount),
+        category: category.trim(),
+        description: description.trim() || undefined,
+        date,
+      });
+    }
+
+    // Nothing to save
+    if (incomesToSave.length === 0) {
+      console.log("VALIDATION ERROR: Please add an income.");
+      return;
+    }
+
+    await saveIncomes(incomesToSave);
   };
 
   return (
@@ -219,10 +370,168 @@ export function IncomeScreen() {
         </View>
       </View>
 
+      {/* Add Another Income Button */}
+      <Pressable
+        onPress={handleAddAnotherIncome}
+        style={screenStyles.outlineButton}
+      >
+        <Text style={screenStyles.outlineButtonText}>
+          + Add Another Income
+        </Text>
+      </Pressable>
+
+      {/* Pending Incomes List */}
+      {pendingIncomes.length > 0 && (
+        <View style={screenStyles.card}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={screenStyles.sectionTitle}>
+              Incomes to Add ({pendingIncomes.length})
+            </Text>
+          </View>
+
+          {pendingIncomes.map((income, index) => (
+            <View
+              key={index}
+              style={{
+                paddingBottom: 12,
+                borderBottomWidth:
+                  index === pendingIncomes.length - 1
+                    ? 0
+                    : 1,
+                borderBottomColor: colors.border,
+                gap: 4,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    flex: 1,
+                  }}
+                >
+                  {income.category}
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.success,
+                    }}
+                  >
+                    +{currencySymbol}{income.amount.toLocaleString()}
+                  </Text>
+
+                  <Pressable
+                    onPress={() => handleRemoveIncome(index)}
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.error,
+                        fontSize: 16,
+                        fontWeight: "700",
+                      }}
+                    >
+                      ✕
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {income.description && (
+                <Text style={{ color: colors.textSecondary }}>
+                  {income.description}
+                </Text>
+              )}
+
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: colors.textMuted,
+                }}
+              >
+                {new Date(income.date).toLocaleDateString()}
+              </Text>
+            </View>
+          ))}
+
+          {/* Total */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              paddingTop: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "700",
+              }}
+            >
+              Total
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.success,
+              }}
+            >
+              +{currencySymbol}
+              {pendingIncomes
+                .reduce(
+                  (total, income) =>
+                    total + income.amount,
+                  0,
+                )
+                .toLocaleString()}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Submit */}
 
       <Pressable onPress={handleSubmit} style={screenStyles.primaryButton}>
-        <Text style={screenStyles.primaryButtonText}>Add Income</Text>
+        <Text style={screenStyles.primaryButtonText}>
+          {loading
+            ? "Adding..."
+            : pendingIncomes.length > 0
+              ? `Add ${
+                  pendingIncomes.length + (amount && category ? 1 : 0)
+                } Income${
+                  pendingIncomes.length + (amount && category ? 1 : 0) === 1
+                    ? ""
+                    : "s"
+                }`
+              : "Add Income"}
+        </Text>
       </Pressable>
 
       {/* Account Picker Modal */}
@@ -263,6 +572,10 @@ export function IncomeScreen() {
                   <TouchableOpacity
                     key={account.id}
                     onPress={() => {
+                      if (currentAccountId !== account.id) {
+                        trackEvent("account_switched");
+                      }
+
                       setCurrentAccount(account.id);
                       setShowAccountPicker(false);
                     }}

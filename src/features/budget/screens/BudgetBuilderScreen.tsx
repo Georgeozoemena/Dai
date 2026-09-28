@@ -14,6 +14,7 @@ import { createBudget, createBudgetCategory } from "../services/budgetService";
 
 import { router } from "expo-router";
 import { colors, screenStyles } from "../../../theme";
+import { generateId } from "../../../utils/id";
 
 export function BudgetBuilderScreen() {
   const [step, setStep] = useState(1);
@@ -99,7 +100,7 @@ export function BudgetBuilderScreen() {
 
       const month = new Date().toISOString().slice(0, 7);
 
-      const budgetId = crypto.randomUUID();
+      const budgetId = generateId();
 
       const budget = {
         id: budgetId,
@@ -117,7 +118,7 @@ export function BudgetBuilderScreen() {
         const amount = Number(categoryAmounts[category]) || 0;
 
         await createBudgetCategory({
-          id: crypto.randomUUID(),
+          id: generateId(),
           budgetId,
           category,
           amount,

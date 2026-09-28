@@ -1,5 +1,7 @@
 import type { Transaction } from "../../../types/transaction";
+import { generateId } from "../../../utils/id";
 import { createTransaction } from "./transactionService";
+import { trackEvent } from "../../../services/analytics/analyticsService";
 
 interface CreateExpenseInput {
   accountId: string;
@@ -14,7 +16,7 @@ export async function createExpense(input: CreateExpenseInput) {
   const now = new Date().toISOString();
 
   const transaction: Transaction = {
-    id: crypto.randomUUID(),
+    id: generateId(),
 
     accountId: input.accountId,
 
@@ -35,6 +37,8 @@ export async function createExpense(input: CreateExpenseInput) {
   };
 
   await createTransaction(transaction);
+
+  trackEvent("expense_created", { category: input.category });
 
   return transaction;
 }

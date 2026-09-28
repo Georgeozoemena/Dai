@@ -1,10 +1,15 @@
 import { clearStoredAuth } from "./authStorage";
 import { useAuthStore } from "../../../store/auth/authStore";
+import { trackLogoutAndFlush } from "../../../services/analytics/analyticsService";
 
 export async function logoutUser() {
   console.log("🔓 LOGOUT STARTED");
   
   try {
+    // Record the logout and deliver queued analytics while the session
+    // token is still valid.
+    await trackLogoutAndFlush();
+
     // Remove saved authentication
     await clearStoredAuth();
     console.log("✅ Storage cleared");

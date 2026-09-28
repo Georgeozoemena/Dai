@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -9,13 +12,50 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import type { Attachment } from "../../../types/attachment";
 import type { Transaction } from "../../../types/transaction";
 
 import {
   getTransaction,
   deleteTransaction,
 } from "../services/transactionService";
+import {
+  deleteAttachmentFiles,
+  formatFileSize,
+  getTransactionAttachments,
+  isImageAttachment,
+  openAttachment,
+  removeAttachment,
+} from "../services/attachmentService";
 import { colors, radii, screenStyles } from "../../../theme";
+
+function confirmDialog(
+  title: string,
+  message: string,
+  confirmLabel: string,
+): Promise<boolean> {
+  if (Platform.OS === "web") {
+    return Promise.resolve(
+      typeof window !== "undefined" &&
+        window.confirm(message),
+    );
+  }
+
+  return new Promise((resolve) => {
+    Alert.alert(title, message, [
+      {
+        text: "Cancel",
+        style: "cancel",
+        onPress: () => resolve(false),
+      },
+      {
+        text: confirmLabel,
+        style: "destructive",
+        onPress: () => resolve(true),
+      },
+    ]);
+  });
+}
 
 interface TransactionDetailScreenProps {
   transactionId: string;
@@ -28,6 +68,8 @@ export function TransactionDetailScreen({
 }: TransactionDetailScreenProps) {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
 
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
@@ -36,9 +78,13 @@ export function TransactionDetailScreen({
       try {
         setLoading(true);
 
-        const data = await getTransaction(transactionId);
+        const [data, attachmentRows] = await Promise.all([
+          getTransaction(transactionId),
+          getTransactionAttachments(transactionId),
+        ]);
 
         setTransaction(data);
+        setAttachments(attachmentRows);
       } catch (error) {
         console.error("FAILED TO LOAD TRANSACTION:", error);
       } finally {
@@ -90,6 +136,8 @@ export function TransactionDetailScreen({
 
       await deleteTransaction(transaction.id);
 
+      await deleteAttachmentFiles(attachments);
+
       console.log("TRANSACTION DELETED:", transaction.id);
 
       router.back();
@@ -100,18 +148,60 @@ export function TransactionDetailScreen({
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!transaction) {
       return;
     }
 
-    // Use native browser confirm for web compatibility
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
+      "Delete Transaction",
       "Are you sure you want to delete this transaction? This action cannot be undone.",
+      "Delete",
     );
 
     if (confirmed) {
       handleDelete();
+    }
+  };
+
+  const handleOpenAttachment = async (attachment: Attachment) => {
+    try {
+      await openAttachment(attachment);
+    } catch (error) {
+      console.error("FAILED TO OPEN ATTACHMENT:", error);
+
+      const message = "This file could not be opened.";
+
+      if (Platform.OS === "web") {
+        window.alert(message);
+        return;
+      }
+
+      Alert.alert("Could not open file", message);
+    }
+  };
+
+  const removeAttachmentFromList = async (attachment: Attachment) => {
+    try {
+      await removeAttachment(attachment);
+
+      setAttachments((current) =>
+        current.filter((item) => item.id !== attachment.id),
+      );
+    } catch (error) {
+      console.error("FAILED TO REMOVE ATTACHMENT:", error);
+    }
+  };
+
+  const confirmRemoveAttachment = async (attachment: Attachment) => {
+    const confirmed = await confirmDialog(
+      "Remove Attachment",
+      `Remove "${attachment.name}" from this transaction?`,
+      "Remove",
+    );
+
+    if (confirmed) {
+      removeAttachmentFromList(attachment);
     }
   };
 
@@ -210,6 +300,73 @@ export function TransactionDetailScreen({
           </Text>
         </View>
       </View>
+
+      {attachments.length > 0 && (
+        <View style={[screenStyles.card, { gap: 14 }]}>
+          <Text style={screenStyles.sectionTitle}>Attachments</Text>
+
+          {attachments.map((attachment) => (
+            <Pressable
+              key={attachment.id}
+              onPress={() => handleOpenAttachment(attachment)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              {isImageAttachment(attachment) ? (
+                <Image
+                  source={{ uri: attachment.uri }}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: radii.sm,
+                  }}
+                />
+              ) : (
+                <View style={screenStyles.iconCircle}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={20}
+                    color={colors.primary}
+                  />
+                </View>
+              )}
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  numberOfLines={1}
+                  style={{ fontWeight: "600", fontSize: 15 }}
+                >
+                  {attachment.name}
+                </Text>
+
+                <Text
+                  style={{
+                    marginTop: 2,
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                  }}
+                >
+                  {formatFileSize(attachment.size)}
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => confirmRemoveAttachment(attachment)}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={18}
+                  color={colors.error}
+                />
+              </Pressable>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <Pressable
         onPress={() => router.push(`/transaction/${transactionId}/edit`)}

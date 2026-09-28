@@ -24,6 +24,15 @@ import { getProfile } from "../../onboarding/services/profileService";
 
 import { createExpense } from "../services/expenseService";
 import { getTransactions } from "../services/transactionService";
+import { trackEvent } from "../../../services/analytics/analyticsService";
+
+import { getBudget, getBudgetCategories } from "../../budget/services/budgetService";
+import {
+  evaluateExpenseBudgetWarnings,
+  type BudgetWarning,
+} from "../../budget/services/budgetWarningService";
+import { BudgetWarningModal } from "../../budget/components/BudgetWarningModal";
+
 import { colors, screenStyles } from "../../../theme";
 
 interface PendingExpense {
@@ -49,6 +58,10 @@ export function ExpenseScreen() {
   );
   const [pendingExpenses, setPendingExpenses] = useState<PendingExpense[]>([]);
   const [loading, setLoading] = useState(false);
+  const [budgetWarnings, setBudgetWarnings] = useState<BudgetWarning[]>([]);
+  const [pendingSubmission, setPendingSubmission] = useState<
+    PendingExpense[] | null
+  >(null);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -212,6 +225,92 @@ export function ExpenseScreen() {
     );
   };
 
+  const getSubmissionBudgetWarnings = async (
+    expenses: PendingExpense[],
+  ): Promise<BudgetWarning[]> => {
+    if (!currentAccountId) {
+      return [];
+    }
+
+    try {
+      const transactions = await getTransactions(currentAccountId);
+
+      // Group by the month of each expense date, so warnings always compare
+      // against the budget period that belongs to the transaction date.
+      const expensesByMonth = new Map<string, PendingExpense[]>();
+
+      for (const expense of expenses) {
+        const month = expense.date.slice(0, 7);
+        const group = expensesByMonth.get(month) ?? [];
+        group.push(expense);
+        expensesByMonth.set(month, group);
+      }
+
+      const warnings: BudgetWarning[] = [];
+
+      for (const [month, monthExpenses] of expensesByMonth) {
+        const budget = await getBudget(currentAccountId, month);
+
+        if (!budget) {
+          continue;
+        }
+
+        const budgetCategories = await getBudgetCategories(budget.id);
+
+        warnings.push(
+          ...evaluateExpenseBudgetWarnings(
+            budgetCategories,
+            transactions,
+            month,
+            monthExpenses.map((expense) => ({
+              category: expense.category,
+              amount: expense.amount,
+            })),
+          ),
+        );
+      }
+
+      return warnings;
+    } catch (error) {
+      // Warnings are advisory — they must never block recording an expense.
+      console.error("FAILED TO CHECK BUDGET WARNINGS:", error);
+      return [];
+    }
+  };
+
+  const saveExpenses = async (expensesToSave: PendingExpense[]) => {
+    if (!currentAccountId) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      for (const expense of expensesToSave) {
+        await createExpense({
+          accountId: currentAccountId,
+          amount: expense.amount,
+          category: expense.category,
+          description: expense.description,
+          date: expense.date,
+        });
+      }
+
+      console.log(`${expensesToSave.length} EXPENSE(S) SAVED SUCCESSFULLY`);
+
+      setPendingExpenses([]);
+      setAmount("");
+      setCategory(null);
+      setDescription("");
+
+      router.back();
+    } catch (error) {
+      console.error("FAILED TO ADD EXPENSES:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!currentAccountId) {
       console.log("VALIDATION ERROR: Please select an account.");
@@ -245,31 +344,40 @@ export function ExpenseScreen() {
       return;
     }
 
-    try {
-      setLoading(true);
+    const warnings = await getSubmissionBudgetWarnings(expensesToSave);
 
-      for (const expense of expensesToSave) {
-        await createExpense({
-          accountId: currentAccountId,
-          amount: expense.amount,
-          category: expense.category,
-          description: expense.description,
-          date: expense.date,
-        });
+    if (warnings.length > 0) {
+      setBudgetWarnings(warnings);
+      setPendingSubmission(expensesToSave);
+      return;
+    }
+
+    await saveExpenses(expensesToSave);
+  };
+
+  const handleCancelBudgetWarning = () => {
+    setBudgetWarnings([]);
+    setPendingSubmission(null);
+  };
+
+  const handleConfirmBudgetWarning = async () => {
+    const expensesToSave = pendingSubmission;
+
+    // The user chose to save despite the warnings — record which budgets
+    // were reached or exceeded.
+    for (const warning of budgetWarnings) {
+      if (warning.level === "approaching") {
+        trackEvent("budget_reached", { category: warning.category });
+      } else {
+        trackEvent("budget_exceeded", { category: warning.category });
       }
+    }
 
-      console.log(`${expensesToSave.length} EXPENSE(S) SAVED SUCCESSFULLY`);
+    setBudgetWarnings([]);
+    setPendingSubmission(null);
 
-      setPendingExpenses([]);
-      setAmount("");
-      setCategory(null);
-      setDescription("");
-
-      router.back();
-    } catch (error) {
-      console.error("FAILED TO ADD EXPENSES:", error);
-    } finally {
-      setLoading(false);
+    if (expensesToSave) {
+      await saveExpenses(expensesToSave);
     }
   };
 
@@ -550,6 +658,10 @@ export function ExpenseScreen() {
                   <TouchableOpacity
                     key={account.id}
                     onPress={() => {
+                      if (currentAccountId !== account.id) {
+                        trackEvent("account_switched");
+                      }
+
                       setCurrentAccount(account.id);
                       setShowAccountPicker(false);
                     }}
@@ -600,6 +712,15 @@ export function ExpenseScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Budget warning modal */}
+      <BudgetWarningModal
+        visible={budgetWarnings.length > 0}
+        warnings={budgetWarnings}
+        currencyCode={currentAccount?.currencyCode ?? "NGN"}
+        onCancel={handleCancelBudgetWarning}
+        onConfirm={handleConfirmBudgetWarning}
+      />
     </ScrollView>
   );
 }

@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import type { Account } from "../../../types/account";
 import { createAccount } from "../../accounts/services/accountService";
 import { CURRENCIES } from "../../../constants/currencies";
+import { generateId } from "../../../utils/id";
 
 interface CreateAccountScreenProps {
   profileId: string;
@@ -56,7 +57,7 @@ export function CreateAccountScreen({
       const now = new Date().toISOString();
 
       const account: Account = {
-        id: crypto.randomUUID(),
+        id: generateId(),
 
         profileId,
 

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -10,14 +11,18 @@ import {
 
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import type { Transaction } from "../../../types/transaction";
 
 import { useAccountStore } from "../../../store/account/accountStore";
+import { useAuthStore } from "../../../store/auth/authStore";
 
 import { getAccount } from "../../accounts/services/accountService";
 
 import { getTransactions } from "../../transactions/services/transactionService";
+
+import { getProfile } from "../../onboarding/services/profileService";
 
 import { calculateDashboardSummary } from "../services/dashboardService";
 
@@ -44,6 +49,8 @@ function formatTransactionTime(date: string) {
 
 export function DashboardScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
+  const clearCurrentAccount = useAccountStore((state) => state.clearCurrentAccount);
+  const user = useAuthStore((state) => state.user);
   const currencyCode = useAccountCurrency();
 
   const [accountName, setAccountName] = useState("");
@@ -80,9 +87,17 @@ export function DashboardScreen() {
 
           const account = await getAccount(currentAccountId);
 
-          if (account) {
-            setAccountName(account.name);
+          // If the account doesn't exist (e.g., after database reset), clear selection
+          if (!account) {
+            console.log("ACCOUNT NOT FOUND - CLEARING SELECTION");
+            clearCurrentAccount();
+            setAccountName("");
+            setTransactions([]);
+            setLoading(false);
+            return;
           }
+
+          setAccountName(account.name);
 
           const data = await getTransactions(currentAccountId);
 
@@ -163,35 +178,261 @@ export function DashboardScreen() {
 
   if (!currentAccountId) {
     return (
-      <View style={[screenStyles.centered, { padding: 24 }]}>
-        <Text
+      <View style={{ flex: 1, backgroundColor: "#FEFDFB" }}>
+        {/* Minimal Header */}
+        <View
           style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: SECONDARY,
-          }}
-        >
-          No account selected
-        </Text>
-        <Pressable
-          onPress={() => router.push("/(tabs)/accounts")}
-          style={{
-            marginTop: 20,
-            backgroundColor: SECONDARY,
+            paddingTop: 60,
+            paddingBottom: 16,
             paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 12,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <Text
+          <Pressable
+            onPress={() => router.push("/settings")}
             style={{
-              color: PRIMARY,
-              fontWeight: "600",
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            Select Account
+            <Ionicons name="person-outline" size={24} color="#1a1a1a" />
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="notifications-outline" size={24} color="#1a1a1a" />
+          </Pressable>
+        </View>
+
+        {/* Centered Empty State Content */}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 40,
+            paddingBottom: 80,
+          }}
+        >
+          {/* Illustration with decorative elements */}
+          <View
+            style={{
+              alignItems: "center",
+              marginBottom: 40,
+            }}
+          >
+            {/* Left decorative element */}
+            <View
+              style={{
+                position: "absolute",
+                left: -60,
+                top: 30,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 60,
+                  backgroundColor: "#E8E5E0",
+                  borderRadius: 20,
+                }}
+              />
+            </View>
+
+            {/* Right decorative element */}
+            <View
+              style={{
+                position: "absolute",
+                right: -60,
+                top: 30,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 60,
+                  backgroundColor: "#E8E5E0",
+                  borderRadius: 20,
+                }}
+              />
+            </View>
+
+            {/* Main wallet illustration - ghost style with Dai colors */}
+            <View
+              style={{
+                width: 140,
+                height: 140,
+                backgroundColor: colors.secondary,
+                borderRadius: 70,
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {/* Eyes */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 24,
+                  marginTop: 20,
+                }}
+              >
+                <View
+                  style={{
+                    width: 16,
+                    height: 24,
+                    backgroundColor: "#888888",
+                    borderRadius: 8,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 16,
+                    height: 24,
+                    backgroundColor: "#888888",
+                    borderRadius: 8,
+                  }}
+                />
+              </View>
+
+              {/* Mouth */}
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  backgroundColor: "#888888",
+                  borderRadius: 5,
+                  marginTop: 16,
+                }}
+              />
+
+              {/* Wave bottom */}
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: -1,
+                  left: 0,
+                  right: 0,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View
+                  style={{
+                    width: 28,
+                    height: 20,
+                    backgroundColor: colors.secondary,
+                    borderBottomLeftRadius: 20,
+                    borderBottomRightRadius: 20,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 28,
+                    height: 20,
+                    backgroundColor: colors.secondary,
+                    borderBottomLeftRadius: 20,
+                    borderBottomRightRadius: 20,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 28,
+                    height: 20,
+                    backgroundColor: colors.secondary,
+                    borderBottomLeftRadius: 20,
+                    borderBottomRightRadius: 20,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 28,
+                    height: 20,
+                    backgroundColor: colors.secondary,
+                    borderBottomLeftRadius: 20,
+                    borderBottomRightRadius: 20,
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Text Content */}
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "600",
+              color: "#1a1a1a",
+              textAlign: "center",
+              marginBottom: 12,
+              letterSpacing: -0.3,
+            }}
+          >
+            There's nothing here
           </Text>
-        </Pressable>
+          <Text
+            style={{
+              fontSize: 15,
+              color: "#999999",
+              textAlign: "center",
+              lineHeight: 22,
+              maxWidth: 280,
+            }}
+          >
+            You have not added any account yet. In the future, all your financial data will be displayed here.
+          </Text>
+
+          {/* CTA Button */}
+          <Pressable
+            onPress={async () => {
+              const profile = await getProfile();
+              if (profile) {
+                router.push({
+                  pathname: "/create-account",
+                  params: { profileId: profile.id },
+                });
+              }
+            }}
+            style={{
+              marginTop: 48,
+              backgroundColor: colors.secondary,
+              paddingHorizontal: 40,
+              paddingVertical: 16,
+              borderRadius: 30,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.primary,
+                fontWeight: "700",
+                fontSize: 16,
+                letterSpacing: 0.3,
+              }}
+            >
+              Create Account
+            </Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -262,9 +503,25 @@ export function DashboardScreen() {
               backgroundColor: "rgba(255,255,255,0.1)",
               alignItems: "center",
               justifyContent: "center",
+              overflow: "hidden",
             }}
           >
-            <Ionicons name="person-outline" size={20} color="#fff" />
+            {user?.avatar ? (
+              <Image
+                source={{ uri: user.avatar }}
+                style={{ width: 40, height: 40 }}
+              />
+            ) : (
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: "#fff",
+                }}
+              >
+                {user?.name?.charAt(0).toUpperCase() || "U"}
+              </Text>
+            )}
           </Pressable>
 
           <Pressable
@@ -447,6 +704,19 @@ export function DashboardScreen() {
 
       {/* Quick Actions */}
       <View>
+        {/* Section Header */}
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "700",
+            color: "#1c1c1ea6",
+            marginBottom: 24, marginLeft: 12, marginTop: 3,
+            letterSpacing: -0.3,
+          }}
+        >
+          Quick Actions
+        </Text>
+        
         <View
           style={{
             flexDirection: "row",
@@ -456,31 +726,38 @@ export function DashboardScreen() {
           {[
             {
               label: "Accounts",
-              icon: "wallet-outline" as const,
-              color: "#dbeafe",
-              iconColor: "#2563eb",
+              icon: "wallet" as const,
+              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              iconColor: "#120E01",
               route: "/(tabs)/accounts" as const,
             },
             {
               label: "Activity",
-              icon: "list-outline" as const,
-              color: "#ffedd5",
-              iconColor: "#ea580c",
+              icon: "list" as const,
+              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              iconColor: "#120E01",
               route: "/(tabs)/activity" as const,
             },
             {
               label: "Budget",
-              icon: "pie-chart-outline" as const,
-              color: "#dcfce7",
-              iconColor: "#16a34a",
+              icon: "pie-chart" as const,
+              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              iconColor: "#120E01",
               route: "/(tabs)/budget" as const,
             },
             {
               label: "Goals",
-              icon: "flag-outline" as const,
-              color: "#e0e7ff",
-              iconColor: "#4f46e5",
+              icon: "flag" as const,
+              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              iconColor: "#120E01",
               route: "/savings-goals" as const,
+            },
+            {
+              label: "AI Coach",
+              icon: "sparkles" as const,
+              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              iconColor: "#120E01",
+              route: "/coach" as const,
             },
           ].map((action) => (
             <Pressable
@@ -522,123 +799,153 @@ export function DashboardScreen() {
         </View>
       </View>
 
-      {/* Budget Health */}
+      {/* Monthly Budget Card */}
       {budgetHealth && (
         <Pressable
           onPress={() => router.push("/(tabs)/budget")}
           style={{
-            padding: 20,
             borderRadius: 20,
-            backgroundColor: colors.surface,
-            gap: 12,
+            overflow: "hidden",
           }}
         >
-          <View
+          <LinearGradient
+            colors={["#E27925", "#C51E05"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
+              padding: 20,
+              paddingTop: 30,
+              paddingBottom: 35,
+              paddingRight: 140,
+              position: "relative",
+              minHeight: 160,
             }}
           >
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "700",
-                color: SECONDARY,
-              }}
-            >
-              Monthly Budget
-            </Text>
-
+            {/* Header with title and status badge */}
             <View
               style={{
-                backgroundColor:
-                  budgetHealth.status === "healthy"
-                    ? "rgba(26,156,75,0.12)"
-                    : budgetHealth.status === "warning"
-                      ? "rgba(251,204,51,0.2)"
-                      : "rgba(244,67,54,0.12)",
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 12,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
               }}
             >
               <Text
                 style={{
-                  fontSize: 12,
-                  fontWeight: "600",
-                  color:
-                    budgetHealth.status === "healthy"
-                      ? "#1a9c4b"
-                      : budgetHealth.status === "warning"
-                        ? "#b8860b"
-                        : "#d00",
+                  fontSize: 22,
+                  fontWeight: "700",
+                  color: "#fff",
                 }}
               >
-                {budgetHealth.status === "healthy"
-                  ? "On track"
-                  : budgetHealth.status === "warning"
-                    ? "Be careful"
-                    : "Exceeded"}
+                Monthly Budget
               </Text>
+
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 20,
+                right: -120,
+
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "700",
+                    color: budgetHealth.status === "healthy" ? "#087300" : "#d00",
+                  }}
+                >
+                  {budgetHealth.status === "healthy"
+                    ? "On Track"
+                    : budgetHealth.status === "warning"
+                      ? "Warning"
+                      : "Exceeded"}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "600",
-              color: SECONDARY,
-            }}
-          >
-            {formatCurrency(budgetHealth.totalSpent, currencyCode)} spent
-          </Text>
+            {/* Amount spent - 16px semibold as requested */}
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "400",
+                color: "#fff",
+                marginBottom: 12,
+              }}
+            >
+              {formatCurrency(budgetHealth.totalSpent, currencyCode)} spent of{" "}
+              {formatCurrency(budgetHealth.totalBudget, currencyCode)}
+            </Text>
 
-          <Text style={{ color: "#999", fontSize: 13 }}>
-            of {formatCurrency(budgetHealth.totalBudget, currencyCode)}
-          </Text>
-
-          <View
-            style={{
-              height: 6,
-              backgroundColor: "#eee",
-              borderRadius: 10,
-              overflow: "hidden",
-            }}
-          >
+            {/* Progress bar - 14px height with white gradient fill */}
             <View
               style={{
-                width: `${Math.min(budgetHealth.percentage, 100)}%`,
-                height: "100%",
-                backgroundColor:
-                  budgetHealth.status === "exceeded"
-                    ? "#d00"
-                    : budgetHealth.status === "warning"
-                      ? PRIMARY
-                      : "#1a9c4b",
-                borderRadius: 10,
+                height: 14,
+                backgroundColor: "rgba(255,255,255,0.15)",
+                borderRadius: 20,
+                overflow: "hidden",
+                marginBottom: 8,
+              }}
+            >
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.6)']} // White gradient blend
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  width: `${Math.min(budgetHealth.percentage, 100)}%`,
+                  height: "100%",
+                  borderRadius: 20,
+                }}
+              />
+            </View>
+
+            {/* Percentage text - smaller, lighter */}
+            <Text
+              style={{
+                fontSize: 13,
+                color: "rgba(255,255,255,0.85)",
+                marginBottom: 20,
+              }}
+            >
+              {budgetHealth.percentage.toFixed(0)}% of your monthly budget
+            </Text>
+
+            {/* View Budget link */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: "#fff",
+                }}
+              >
+                View Budget
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="#fff" />
+            </View>
+
+            {/* Stacked coins illustration - flipped and positioned */}
+            <Image
+              source={require("../../../../assets/Personal finance savings concept with stacked coins.png")}
+              style={{
+                position: "absolute",
+                right: -90,
+                bottom: -55,
+                width: 240,
+                height: 240,
+                resizeMode: "contain",
+                transform: [{ scaleX: -1 }],
               }}
             />
-          </View>
-
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#999",
-            }}
-          >
-            {budgetHealth.percentage.toFixed(0)}% of your monthly budget used
-          </Text>
-
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "600",
-              color: SECONDARY,
-            }}
-          >
-            View Budget →
-          </Text>
+          </LinearGradient>
         </Pressable>
       )}
 
