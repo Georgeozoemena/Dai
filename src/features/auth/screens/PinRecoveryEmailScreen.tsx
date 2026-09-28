@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { sendPinResetCode } from "../services/pinRecoveryService";
+import { colors } from "../../../theme";
 
 interface PinRecoveryEmailScreenProps {
   onCodeSent: (email: string) => void;
@@ -58,6 +59,40 @@ export function PinRecoveryEmailScreen({
       style={styles.container}
     >
       <View style={styles.content}>
+        {/* Illustration - Key with Question Mark (Ghost Style) */}
+        <View style={styles.illustrationContainer}>
+          {/* Decorative elements */}
+          <View style={styles.decorativeLeft}>
+            <View style={styles.decorativePill} />
+          </View>
+          <View style={styles.decorativeRight}>
+            <View style={styles.decorativePill} />
+          </View>
+
+          {/* Main key illustration */}
+          <View style={styles.keyBody}>
+            {/* Key head (circle with question mark) */}
+            <View style={styles.keyHead}>
+              <Text style={styles.questionMarkText}>?</Text>
+            </View>
+
+            {/* Key shaft */}
+            <View style={styles.keyShaft} />
+
+            {/* Key teeth */}
+            <View style={styles.keyTeeth}>
+              <View style={styles.tooth} />
+              <View style={[styles.tooth, { height: 16 }]} />
+              <View style={[styles.tooth, { height: 12 }]} />
+            </View>
+          </View>
+
+          {/* Floating dots */}
+          <View style={[styles.floatingDot, { top: 20, left: 30 }]} />
+          <View style={[styles.floatingDot, { top: 40, right: 40 }]} />
+          <View style={[styles.floatingDot, { bottom: 30, left: 50 }]} />
+        </View>
+
         {/* Title */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>Forgot your PIN?</Text>
@@ -76,6 +111,7 @@ export function PinRecoveryEmailScreen({
               setError("");
             }}
             placeholder="your.email@example.com"
+            placeholderTextColor="rgba(18, 14, 1, 0.3)"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -127,6 +163,77 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 32,
   },
+  illustrationContainer: {
+    alignItems: "center",
+    marginBottom: 48,
+    height: 160,
+    justifyContent: "center",
+    position: "relative",
+  },
+  decorativeLeft: {
+    position: "absolute",
+    left: 20,
+    top: 40,
+  },
+  decorativeRight: {
+    position: "absolute",
+    right: 20,
+    top: 40,
+  },
+  decorativePill: {
+    width: 32,
+    height: 48,
+    backgroundColor: "rgba(18, 14, 1, 0.06)",
+    borderRadius: 16,
+  },
+  keyBody: {
+    alignItems: "center",
+    position: "relative",
+  },
+  keyHead: {
+    width: 80,
+    height: 80,
+    backgroundColor: "#120E01",
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: -8,
+    zIndex: 2,
+  },
+  questionMarkText: {
+    fontSize: 36,
+    fontWeight: "700",
+    color: "#FBCC33",
+  },
+  keyShaft: {
+    width: 40,
+    height: 50,
+    backgroundColor: "#120E01",
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    zIndex: 1,
+  },
+  keyTeeth: {
+    position: "absolute",
+    bottom: 0,
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "flex-end",
+  },
+  tooth: {
+    width: 8,
+    height: 20,
+    backgroundColor: "#120E01",
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+  },
+  floatingDot: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(251, 204, 51, 0.3)",
+  },
   titleSection: {
     marginBottom: 40,
   },
@@ -135,10 +242,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#120E01",
     marginBottom: 12,
+    textAlign: "center",
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 15,
+    textAlign: "center",
     color: "rgba(18, 14, 1, 0.6)",
     lineHeight: 24,
   },
@@ -185,15 +294,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   button: {
-    backgroundColor: "#FBCC33",
+    backgroundColor: colors.secondary,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#FBCC33",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 4,
   },
   buttonDisabled: {
@@ -202,7 +307,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#120E01",
+    color: colors.primary,
     letterSpacing: 0.2,
   },
 });

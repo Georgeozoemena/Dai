@@ -727,35 +727,35 @@ export function DashboardScreen() {
             {
               label: "Accounts",
               icon: "wallet" as const,
-              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              color: "#fff3ce", // Faint shade of #120E01
               iconColor: "#120E01",
               route: "/(tabs)/accounts" as const,
             },
             {
               label: "Activity",
               icon: "list" as const,
-              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              color: "#fff3ce", // Faint shade of #120E01
               iconColor: "#120E01",
               route: "/(tabs)/activity" as const,
             },
             {
               label: "Budget",
               icon: "pie-chart" as const,
-              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              color: "#fff3ce", // Faint shade of #120E01
               iconColor: "#120E01",
               route: "/(tabs)/budget" as const,
             },
             {
               label: "Goals",
               icon: "flag" as const,
-              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              color: "#fff3ce", // Faint shade of #120E01
               iconColor: "#120E01",
               route: "/savings-goals" as const,
             },
             {
               label: "AI Coach",
               icon: "sparkles" as const,
-              color: "rgba(18, 14, 1, 0.08)", // Faint shade of #120E01
+              color: "#fff3ce", // Faint shade of #120E01
               iconColor: "#120E01",
               route: "/coach" as const,
             },

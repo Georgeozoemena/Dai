@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { verifyPinResetCode, sendPinResetCode } from "../services/pinRecoveryService";
+import { colors } from "../../../theme";
 
 interface PinRecoveryVerifyScreenProps {
   email: string;
@@ -107,6 +108,44 @@ export function PinRecoveryVerifyScreen({
   return (
     <View style={styles.container}>
       <View style={styles.content}>
+        {/* Illustration - Envelope with Code (Ghost Style) */}
+        <View style={styles.illustrationContainer}>
+          {/* Decorative elements */}
+          <View style={styles.decorativeLeft}>
+            <View style={styles.decorativePill} />
+          </View>
+          <View style={styles.decorativeRight}>
+            <View style={styles.decorativePill} />
+          </View>
+
+          {/* Main envelope illustration */}
+          <View style={styles.envelopeContainer}>
+            {/* Envelope body */}
+            <View style={styles.envelopeBody}>
+              {/* Code display on envelope */}
+              <View style={styles.codeDisplay}>
+                <View style={styles.codeDot} />
+                <View style={styles.codeDot} />
+                <View style={styles.codeDot} />
+                <View style={styles.codeDot} />
+                <View style={styles.codeDot} />
+                <View style={styles.codeDot} />
+              </View>
+            </View>
+
+            {/* Envelope flap */}
+            <View style={styles.envelopeFlap} />
+          </View>
+
+          {/* Floating sparkles */}
+          <View style={[styles.sparkle, { top: 30, left: 40 }]}>
+            <Ionicons name="sparkles" size={16} color="rgba(251, 204, 51, 0.4)" />
+          </View>
+          <View style={[styles.sparkle, { top: 50, right: 35 }]}>
+            <Ionicons name="sparkles" size={12} color="rgba(251, 204, 51, 0.3)" />
+          </View>
+        </View>
+
         {/* Title */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>Enter verification code</Text>
@@ -188,10 +227,78 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 32,
   },
+  illustrationContainer: {
+    alignItems: "center",
+    marginBottom: 48,
+    height: 160,
+    justifyContent: "center",
+    position: "relative",
+  },
+  decorativeLeft: {
+    position: "absolute",
+    left: 20,
+    top: 40,
+  },
+  decorativeRight: {
+    position: "absolute",
+    right: 20,
+    top: 40,
+  },
+  decorativePill: {
+    width: 32,
+    height: 48,
+    backgroundColor: "rgba(18, 14, 1, 0.06)",
+    borderRadius: 16,
+  },
+  envelopeContainer: {
+    width: 120,
+    height: 90,
+    position: "relative",
+  },
+  envelopeBody: {
+    width: 120,
+    height: 80,
+    backgroundColor: "#120E01",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  envelopeFlap: {
+    position: "absolute",
+    top: 0,
+    left: "50%",
+    marginLeft: -60,
+    width: 0,
+    height: 0,
+    backgroundColor: "transparent",
+    borderStyle: "solid",
+    borderLeftWidth: 60,
+    borderRightWidth: 60,
+    borderTopWidth: 40,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#FBCC33",
+    zIndex: 2,
+  },
+  codeDisplay: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  codeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#FBCC33",
+  },
+  sparkle: {
+    position: "absolute",
+  },
   titleSection: {
     marginBottom: 48,
   },
   title: {
+    textAlign: "center",
     fontSize: 26,
     fontWeight: "700",
     color: "#120E01",
@@ -199,6 +306,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
+    textAlign: "center",
     fontSize: 15,
     color: "rgba(18, 14, 1, 0.6)",
     lineHeight: 24,
@@ -261,15 +369,11 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   button: {
-    backgroundColor: "#FBCC33",
+    backgroundColor: colors.secondary,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#FBCC33",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 4,
   },
   buttonDisabled: {
@@ -278,7 +382,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#120E01",
+    color: colors.primary,
     letterSpacing: 0.2,
   },
 });

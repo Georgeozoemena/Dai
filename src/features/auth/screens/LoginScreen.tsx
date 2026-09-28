@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { colors } from "../../../theme";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: colors.primary,
   },
   appleButtonText: {
     fontSize: 16,
