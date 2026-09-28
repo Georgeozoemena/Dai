@@ -24,6 +24,12 @@ const settingsItems = [
     route: "/profile",
   },
   {
+    title: "Theme",
+    description: "Switch between light and dark mode",
+    icon: "moon-outline" as const,
+    route: "/theme-settings",
+  },
+  {
     title: "Accounts",
     description: "Manage your financial accounts",
     icon: "wallet-outline" as const,
