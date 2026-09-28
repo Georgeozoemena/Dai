@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, ActivityIndicator } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View, ActivityIndicator, Animated } from "react-native";
 
 import { setPin as savePin } from "../services/pinService";
 import { confirmPinReset } from "../services/pinRecoveryService";
@@ -19,6 +19,9 @@ export function PinRecoveryResetScreen({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const shakeAnimation = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   const inputRefs = [
     useRef<TextInput>(null),
     useRef<TextInput>(null),
@@ -27,8 +30,41 @@ export function PinRecoveryResetScreen({
   ];
 
   useEffect(() => {
-    inputRefs[0].current?.focus();
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+    
+    // Auto-focus first input
+    setTimeout(() => inputRefs[0].current?.focus(), 300);
   }, []);
+
+  const shakeInputs = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnimation, {
+        toValue: 10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnimation, {
+        toValue: -10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnimation, {
+        toValue: 10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnimation, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const currentPin = step === "create" ? pin : confirmPin;
   const setCurrentPin = step === "create" ? setPin : setConfirmPin;
@@ -81,6 +117,7 @@ export function PinRecoveryResetScreen({
     if (pinCode !== confirmCode) {
       setError("PINs don't match. Please try again.");
       setConfirmPin(["", "", "", ""]);
+      shakeInputs();
       inputRefs[0].current?.focus();
       return;
     }
@@ -107,7 +144,7 @@ export function PinRecoveryResetScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoRow}>
@@ -131,9 +168,21 @@ export function PinRecoveryResetScreen({
         </Text>
 
         {/* PIN Input Boxes */}
-        <View style={styles.pinContainer}>
+        <Animated.View 
+          style={[
+            styles.pinContainer,
+            { transform: [{ translateX: shakeAnimation }] }
+          ]}
+        >
           {currentPin.map((digit, index) => (
-            <View key={index} style={styles.pinBox}>
+            <View 
+              key={index} 
+              style={[
+                styles.pinBox,
+                digit && styles.pinBoxFilled,
+                error && styles.pinBoxError,
+              ]}
+            >
               <TextInput
                 ref={inputRefs[index]}
                 value={digit}
@@ -144,10 +193,12 @@ export function PinRecoveryResetScreen({
                 style={styles.pinInput}
                 secureTextEntry
               />
-              <Text style={styles.pinDigit}>{digit || ""}</Text>
+              {digit ? (
+                <View style={styles.pinDot} />
+              ) : null}
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Error Message */}
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -159,20 +210,21 @@ export function PinRecoveryResetScreen({
         <Pressable
           onPress={handleContinue}
           disabled={!isPinComplete || saving}
-          style={[
+          style={({ pressed }) => [
             styles.button,
             (!isPinComplete || saving) && styles.buttonDisabled,
+            pressed && !(!isPinComplete || saving) && styles.buttonPressed,
           ]}
         >
           {saving ? (
-            <ActivityIndicator color="#FBCC33" />
+            <ActivityIndicator color="#120E01" />
           ) : (
             <Text style={styles.buttonText}>
               {step === "create" ? "Continue" : "Reset PIN"}
             </Text>
           )}
         </Pressable>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -259,22 +311,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     position: "relative",
   },
+  pinBoxFilled: {
+    borderColor: "#FBCC33",
+    backgroundColor: "rgba(251, 204, 51, 0.05)",
+  },
+  pinBoxError: {
+    borderColor: "#E53E3E",
+    backgroundColor: "rgba(229, 62, 62, 0.05)",
+  },
   pinInput: {
     position: "absolute",
     width: "100%",
     height: "100%",
     opacity: 0,
   },
-  pinDigit: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#120E01",
+  pinDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#120E01",
   },
   error: {
     color: "#E53E3E",
     fontSize: 14,
+    fontWeight: "500",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 16,
   },
   button: {
     backgroundColor: "#FBCC33",
@@ -287,6 +349,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  buttonPressed: {
+    transform: [{ scale: 0.98 }],
+    shadowOpacity: 0.2,
   },
   buttonDisabled: {
     opacity: 0.5,

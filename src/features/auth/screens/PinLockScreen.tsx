@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, Alert, Platform } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View, Animated, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
@@ -22,6 +22,9 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
   const [checking, setChecking] = useState(false);
   const [biometricCapabilities, setBiometricCapabilities] = useState<BiometricCapabilities | null>(null);
   
+  const shakeAnimation = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  
   const inputRefs = [
     useRef<TextInput>(null),
     useRef<TextInput>(null),
@@ -33,9 +36,41 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
     // Check biometric capabilities
     checkBiometricCapabilities().then(setBiometricCapabilities);
     
-    // Auto-focus first input on mount
-    inputRefs[0].current?.focus();
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+    
+    // Auto-focus first input
+    setTimeout(() => inputRefs[0].current?.focus(), 300);
   }, []);
+
+  const shakeInputs = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnimation, {
+        toValue: 10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnimation, {
+        toValue: -10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnimation, {
+        toValue: 10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnimation, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const handlePinChange = (value: string, index: number) => {
     // Only allow single digit
@@ -78,6 +113,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
       if (!valid) {
         setError("Incorrect PIN. Please try again.");
         setPin(["", "", "", ""]);
+        shakeInputs();
         inputRefs[0].current?.focus();
         return;
       }
@@ -85,6 +121,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
       onSuccess?.();
     } catch {
       setError("Unable to verify PIN.");
+      shakeInputs();
     } finally {
       setChecking(false);
     }
@@ -115,7 +152,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
   return (
     <View style={styles.container}>
       {/* Content */}
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoRow}>
@@ -135,9 +172,21 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
         </Text>
 
         {/* PIN Input Boxes */}
-        <View style={styles.pinContainer}>
+        <Animated.View 
+          style={[
+            styles.pinContainer,
+            { transform: [{ translateX: shakeAnimation }] }
+          ]}
+        >
           {pin.map((digit, index) => (
-            <View key={index} style={styles.pinBox}>
+            <View 
+              key={index} 
+              style={[
+                styles.pinBox,
+                digit && styles.pinBoxFilled,
+                error && styles.pinBoxError,
+              ]}
+            >
               <TextInput
                 ref={inputRefs[index]}
                 value={digit}
@@ -148,10 +197,12 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
                 style={styles.pinInput}
                 secureTextEntry
               />
-              <Text style={styles.pinDigit}>{digit || ""}</Text>
+              {digit ? (
+                <View style={styles.pinDot} />
+              ) : null}
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Error Message */}
         {error ? (
@@ -165,10 +216,16 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
 
         {/* Biometric Button (if available) */}
         {biometricCapabilities?.isAvailable && (
-          <Pressable onPress={handleBiometricAuth} style={styles.biometricButton}>
+          <Pressable 
+            onPress={handleBiometricAuth} 
+            style={({ pressed }) => [
+              styles.biometricButton,
+              pressed && styles.biometricButtonPressed
+            ]}
+          >
             <Ionicons 
               name={biometricCapabilities.biometricType === "facial" ? "scan" : "finger-print"} 
-              size={24} 
+              size={22} 
               color="#120E01" 
             />
             <Text style={styles.biometricButtonText}>
@@ -184,16 +241,17 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
         <Pressable
           onPress={handleUnlock}
           disabled={!isPinComplete || checking}
-          style={[
+          style={({ pressed }) => [
             styles.button,
             (!isPinComplete || checking) && styles.buttonDisabled,
+            pressed && !(!isPinComplete || checking) && styles.buttonPressed,
           ]}
         >
           <Text style={styles.buttonText}>
             {checking ? "Verifying..." : "Continue"}
           </Text>
         </Pressable>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -279,6 +337,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
+    transition: "all 0.2s ease",
+  },
+  pinBoxFilled: {
+    borderColor: "#FBCC33",
+    backgroundColor: "rgba(251, 204, 51, 0.05)",
+  },
+  pinBoxError: {
+    borderColor: "#E53E3E",
+    backgroundColor: "rgba(229, 62, 62, 0.05)",
   },
   pinInput: {
     position: "absolute",
@@ -286,29 +353,30 @@ const styles = StyleSheet.create({
     height: "100%",
     opacity: 0,
   },
-  pinDigit: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#120E01",
+  pinDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#120E01",
   },
   error: {
     color: "#E53E3E",
     fontSize: 14,
+    fontWeight: "500",
     textAlign: "center",
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 8,
   },
   forgotPinContainer: {
     alignSelf: "center",
-    marginTop: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   forgotPinText: {
     fontSize: 15,
     fontWeight: "600",
     color: "#120E01",
-    textDecorationLine: "underline",
   },
   biometricButton: {
     flexDirection: "row",
@@ -321,8 +389,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderWidth: 1.5,
     borderColor: "rgba(18, 14, 1, 0.15)",
-    marginTop: 12,
+    marginTop: 16,
     alignSelf: "center",
+  },
+  biometricButtonPressed: {
+    backgroundColor: "rgba(18, 14, 1, 0.05)",
+    transform: [{ scale: 0.98 }],
   },
   biometricButtonText: {
     fontSize: 15,
@@ -340,6 +412,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  buttonPressed: {
+    transform: [{ scale: 0.98 }],
+    shadowOpacity: 0.2,
   },
   buttonDisabled: {
     opacity: 0.5,
