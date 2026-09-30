@@ -478,7 +478,7 @@ export function DaiCoachScreen() {
           </View>
         </View>
 
-        <Pressable
+        {/* <Pressable
           style={styles.sessionButton}
           onPress={() => {
             // Scroll to AI insights section below
@@ -487,7 +487,7 @@ export function DaiCoachScreen() {
         >
           <Text style={styles.sessionButtonText}>View AI Insights</Text>
           <Ionicons name="arrow-forward" size={16} color={colors.text} />
-        </Pressable>
+        </Pressable> */}
       </View>
 
       {/* Progress Cards Grid with Animated Graphs */}
@@ -554,7 +554,12 @@ export function DaiCoachScreen() {
       {/* AI Insights Section */}
       <View style={styles.aiSection}>
         <View style={styles.aiSectionHeader}>
-          <Ionicons name="sparkles" size={20} color={colors.primary} />
+          <LinearGradient
+            colors={['#FF6B4A', '#FF4520']}
+            style={styles.aiIconBadge}
+          >
+            <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+          </LinearGradient>
           <Text style={styles.aiSectionTitle}>AI-Powered Insights</Text>
         </View>
 
@@ -565,12 +570,356 @@ export function DaiCoachScreen() {
           </View>
         )}
 
-        {!adviceLoading && !advice && adviceError && (
-          <View>
-            <Text style={styles.errorText}>{adviceError}</Text>
-            <Pressable onPress={loadAdvice} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </Pressable>
+        {!adviceLoading && !advice && (
+          <View style={{ gap: 16 }}>
+            {/* Financial coaching insights - content-rich, modern design */}
+            
+            {overview.incomeTotal > 0 || overview.expensesTotal > 0 ? (
+              <>
+                {/* Main Financial Status Card - Rich Data Display */}
+                <View style={styles.coachingCard}>
+                  <View style={styles.cardContent}>
+                    {/* Status Header with Key Metrics */}
+                    <View style={styles.statusHeader}>
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.statusBadge}>
+                          <View style={[
+                            styles.statusDotSmall,
+                            { 
+                              backgroundColor: overview.expensesTotal > overview.incomeTotal 
+                                ? colors.error
+                                : net > overview.incomeTotal * 0.2
+                                ? colors.success
+                                : colors.primary
+                            }
+                          ]} />
+                          <Text style={styles.statusBadgeText}>
+                            {overview.expensesTotal > overview.incomeTotal 
+                              ? "Overspending"
+                              : net > overview.incomeTotal * 0.2
+                              ? "Excellent"
+                              : "Good Progress"
+                            }
+                          </Text>
+                        </View>
+                        <Text style={styles.cardMainTitle}>
+                          {overview.expensesTotal > overview.incomeTotal 
+                            ? "Budget Alert"
+                            : net > overview.incomeTotal * 0.2
+                            ? "Strong Savings"
+                            : "On Track"
+                          }
+                        </Text>
+                      </View>
+                      <View style={styles.savingsRateBox}>
+                        <Text style={styles.savingsRateNumber}>
+                          {overview.incomeTotal > 0 
+                            ? `${((net / overview.incomeTotal) * 100).toFixed(0)}%`
+                            : "0%"
+                          }
+                        </Text>
+                        <Text style={styles.savingsRateLabel}>saved</Text>
+                      </View>
+                    </View>
+
+                    {/* Financial Summary Grid */}
+                    <View style={styles.metricsGrid}>
+                      <View style={styles.metricBox}>
+                        <Text style={styles.metricLabel}>Income</Text>
+                        <Text style={styles.metricValue}>
+                          {formatCurrency(overview.incomeTotal, currencyCode)}
+                        </Text>
+                      </View>
+                      <View style={styles.metricBox}>
+                        <Text style={styles.metricLabel}>Spent</Text>
+                        <Text style={[styles.metricValue, { color: colors.error }]}>
+                          {formatCurrency(overview.expensesTotal, currencyCode)}
+                        </Text>
+                      </View>
+                      <View style={styles.metricBox}>
+                        <Text style={styles.metricLabel}>Balance</Text>
+                        <Text style={[
+                          styles.metricValue,
+                          { color: net >= 0 ? colors.success : colors.error }
+                        ]}>
+                          {formatCurrency(net, currencyCode)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.dividerLine} />
+
+                    {/* Actionable Recommendations */}
+                    <View>
+                      <Text style={styles.sectionLabel}>Recommended Actions</Text>
+                      <View style={styles.actionsList}>
+                        {overview.expensesTotal > overview.incomeTotal ? (
+                          <>
+                            <View style={styles.modernActionItem}>
+                              <View style={styles.actionIconBox}>
+                                <Ionicons name="cut-outline" size={20} color={colors.error} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Reduce Top Category</Text>
+                                <Text style={styles.actionDescription}>
+                                  Cut {formatCurrency((overview.expensesTotal - overview.incomeTotal) / 2, currencyCode)} from your highest spending area
+                                </Text>
+                              </View>
+                            </View>
+                            <View style={styles.modernActionItem}>
+                              <View style={styles.actionIconBox}>
+                                <Ionicons name="pause-circle-outline" size={20} color={colors.error} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Spending Freeze</Text>
+                                <Text style={styles.actionDescription}>
+                                  Pause non-essentials for {period.daysRemaining} days to recover
+                                </Text>
+                              </View>
+                            </View>
+                          </>
+                        ) : net > overview.incomeTotal * 0.2 ? (
+                          <>
+                            <View style={styles.modernActionItem}>
+                              <View style={styles.actionIconBox}>
+                                <Ionicons name="wallet-outline" size={20} color={colors.success} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Build Emergency Fund</Text>
+                                <Text style={styles.actionDescription}>
+                                  Allocate {formatCurrency(net * 0.6, currencyCode)} to savings immediately
+                                </Text>
+                              </View>
+                            </View>
+                            <View style={styles.modernActionItem}>
+                              <View style={styles.actionIconBox}>
+                                <Ionicons name="trending-up-outline" size={20} color={colors.success} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Maintain Momentum</Text>
+                                <Text style={styles.actionDescription}>
+                                  Keep your {((net / overview.incomeTotal) * 100).toFixed(0)}% savings rate consistent
+                                </Text>
+                              </View>
+                            </View>
+                          </>
+                        ) : (
+                          <>
+                            <View style={styles.modernActionItem}>
+                              <View style={styles.actionIconBox}>
+                                <Ionicons name="options-outline" size={20} color={colors.primary} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Optimize One Category</Text>
+                                <Text style={styles.actionDescription}>
+                                  Reduce by 10% to save {formatCurrency(overview.expensesTotal * 0.1, currencyCode)}
+                                </Text>
+                              </View>
+                            </View>
+                            <View style={styles.modernActionItem}>
+                              <View style={styles.actionIconBox}>
+                                <Ionicons name="arrow-up-circle-outline" size={20} color={colors.primary} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Increase Savings Rate</Text>
+                                <Text style={styles.actionDescription}>
+                                  Target 20% savings (currently {((net / overview.incomeTotal) * 100).toFixed(0)}%)
+                                </Text>
+                              </View>
+                            </View>
+                          </>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Daily Spending Pace Card - Compact and Informative */}
+                {period.daysElapsed > 0 && period.daysRemaining > 0 && (
+                  <View style={styles.coachingCard}>
+                    <View style={styles.cardContent}>
+                      <View style={styles.compactHeader}>
+                        <View>
+                          <Text style={styles.compactLabel}>Daily Average</Text>
+                          <Text style={styles.compactValue}>
+                            {formatCurrency(overview.expensesTotal / period.daysElapsed, currencyCode)}
+                          </Text>
+                        </View>
+                        <View style={styles.verticalDivider} />
+                        <View>
+                          <Text style={styles.compactLabel}>Days Left</Text>
+                          <Text style={styles.compactValue}>{period.daysRemaining}</Text>
+                        </View>
+                        <View style={styles.verticalDivider} />
+                        <View>
+                          <Text style={styles.compactLabel}>Projected</Text>
+                          <Text style={styles.compactValue}>
+                            {(() => {
+                              const dailyAvg = overview.expensesTotal / period.daysElapsed;
+                              const projected = overview.expensesTotal + (dailyAvg * period.daysRemaining);
+                              return formatCurrency(projected, currencyCode);
+                            })()}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.dividerLine} />
+
+                      <View>
+                        <Text style={styles.sectionLabel}>Spending Forecast</Text>
+                        {(() => {
+                          const dailyAvg = overview.expensesTotal / period.daysElapsed;
+                          const projected = overview.expensesTotal + (dailyAvg * period.daysRemaining);
+                          const dailyBudget = overview.incomeTotal > 0 
+                            ? (overview.incomeTotal - overview.expensesTotal) / period.daysRemaining
+                            : dailyAvg * 0.7;
+                          
+                          return (
+                            <View style={styles.forecastBox}>
+                              {projected > overview.incomeTotal ? (
+                                <>
+                                  <View style={styles.forecastWarning}>
+                                    <Ionicons name="warning-outline" size={20} color={colors.error} style={{ marginTop: 2 }} />
+                                    <View style={{ flex: 1 }}>
+                                      <Text style={styles.forecastTitle}>Projected Overspending</Text>
+                                      <Text style={styles.forecastText}>
+                                        You're on track to exceed budget by {formatCurrency(projected - overview.incomeTotal, currencyCode)}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                  <View style={styles.budgetTarget}>
+                                    <Text style={styles.budgetTargetLabel}>Daily Budget Target</Text>
+                                    <Text style={styles.budgetTargetValue}>
+                                      {formatCurrency(dailyBudget, currencyCode)}/day
+                                    </Text>
+                                  </View>
+                                </>
+                              ) : (
+                                <>
+                                  <View style={styles.forecastSuccess}>
+                                    <Ionicons name="checkmark-circle-outline" size={20} color={colors.success} style={{ marginTop: 2 }} />
+                                    <View style={{ flex: 1 }}>
+                                      <Text style={styles.forecastTitle}>On Track</Text>
+                                      <Text style={styles.forecastText}>
+                                        {formatCurrency(dailyBudget, currencyCode)}/day available for next {period.daysRemaining} days
+                                      </Text>
+                                    </View>
+                                  </View>
+                                </>
+                              )}
+                            </View>
+                          );
+                        })()}
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                {/* Quick Tip Card */}
+                <View style={styles.tipCard}>
+                  <View style={styles.tipAccent} />
+                  <View style={styles.tipContent}>
+                    <View style={styles.tipHeader}>
+                      <View style={styles.tipIconCircle}>
+                        <Ionicons name="bulb-outline" size={18} color={colors.primary} />
+                      </View>
+                      <Text style={styles.tipLabel}>Pro Tip</Text>
+                    </View>
+                    <Text style={styles.tipText}>
+                      {overview.categories.length < 5
+                        ? "Track more categories for detailed insights into your spending patterns"
+                        : overview.categories.length > 12
+                        ? "Simplify your budget—fewer categories are easier to maintain"
+                        : period.daysRemaining <= 3
+                        ? "Plan next month's budget while current spending is fresh in mind"
+                        : "Weekly budget reviews help catch overspending early"
+                      }
+                    </Text>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <View style={styles.coachingCard}>
+                <View style={styles.cardContent}>
+                  <View style={styles.emptyStateHeader}>
+                    <View style={styles.emptyStateIcon}>
+                      <Ionicons name="analytics-outline" size={32} color={colors.primary} />
+                    </View>
+                    <Text style={styles.cardMainTitle}>Start Tracking</Text>
+                    <Text style={styles.emptyStateSubtext}>
+                      Begin recording transactions to unlock personalized insights
+                    </Text>
+                  </View>
+
+                  <View style={styles.dividerLine} />
+
+                  <View>
+                    <Text style={styles.sectionLabel}>Getting Started</Text>
+                    <View style={styles.actionsList}>
+                      <View style={styles.modernActionItem}>
+                        <View style={styles.actionIconBox}>
+                          <Ionicons name="receipt-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.actionTitle}>Record All Transactions</Text>
+                          <Text style={styles.actionDescription}>
+                            Log income and expenses to build your financial picture
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.modernActionItem}>
+                        <View style={styles.actionIconBox}>
+                          <Ionicons name="grid-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.actionTitle}>Create Budget Categories</Text>
+                          <Text style={styles.actionDescription}>
+                            Set up 5-8 categories that match your lifestyle
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.modernActionItem}>
+                        <View style={styles.actionIconBox}>
+                          <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.actionTitle}>Set Savings Target</Text>
+                          <Text style={styles.actionDescription}>
+                            Aim to save at least 20% of your income
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* AI Prompt - Compact Design */}
+            <View style={styles.aiPrompt}>
+              <View style={styles.aiPromptIcon}>
+                <LinearGradient
+                  colors={['#FF6B4A', '#FF4520']}
+                  style={styles.aiIconGradient}
+                >
+                  <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+                </LinearGradient>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.aiPromptTitle}>AI-Powered Coaching</Text>
+                <Text style={styles.aiPromptText}>
+                  {adviceError 
+                    ? "Reconnect for personalized insights"
+                    : "Get deeper analysis of your finances"
+                  }
+                </Text>
+              </View>
+              <Pressable onPress={loadAdvice} style={styles.aiButton}>
+                <Text style={styles.aiButtonText}>
+                  {adviceError ? "Retry" : "Enable"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -904,19 +1253,31 @@ const styles = StyleSheet.create({
   },
   aiSection: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-    borderWidth: 0,
-    // borderColor: colors.primary + "20",
+    borderRadius: 24,
+    padding: 24,
+    gap: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   aiSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+  },
+  aiIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FF4520",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   aiSectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: colors.text,
   },
@@ -974,6 +1335,339 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 16,
     marginTop: 8,
+  },
+  coachingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardContent: {
+    padding: 24,
+    gap: 20,
+  },
+  statusHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.background,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
+  statusDotSmall: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.text,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cardMainTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 4,
+  },
+  savingsRateBox: {
+    alignItems: "center",
+    backgroundColor: colors.background,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: 80,
+  },
+  savingsRateNumber: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.text,
+    lineHeight: 32,
+  },
+  savingsRateLabel: {
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  metricBox: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metricLabel: {
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  actionsList: {
+    gap: 12,
+  },
+  modernActionItem: {
+    flexDirection: "row",
+    gap: 12,
+    backgroundColor: colors.background,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 3,
+  },
+  actionDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  compactHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  compactLabel: {
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  compactValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    textAlign: "center",
+  },
+  verticalDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: colors.border,
+  },
+  forecastBox: {
+    gap: 12,
+  },
+  forecastWarning: {
+    flexDirection: "row",
+    gap: 12,
+    backgroundColor: colors.error + '10',
+    padding: 14,
+    borderRadius: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.error,
+  },
+  forecastSuccess: {
+    flexDirection: "row",
+    gap: 12,
+    backgroundColor: colors.success + '10',
+    padding: 14,
+    borderRadius: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.success,
+  },
+  forecastTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 4,
+  },
+  forecastText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  budgetTarget: {
+    backgroundColor: colors.background,
+    padding: 14,
+    borderRadius: 14,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  budgetTargetLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  budgetTargetValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  emptyStateHeader: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  emptyStateIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  tipCard: {
+    backgroundColor: colors.secondary,
+    borderRadius: 20,
+    overflow: "hidden",
+    flexDirection: "row",
+    // borderWidth: 2,
+    // borderColor: colors.primary,
+  },
+  tipAccent: {
+    width: 8,
+    // backgroundColor: colors.primary,
+  },
+  tipContent: {
+    flex: 1,
+    padding: 20,
+    gap: 12,
+  },
+  tipHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tipIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tipLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  tipText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#ffffff82",
+    lineHeight: 22,
+  },
+  aiPrompt: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  aiPromptIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  aiIconGradient: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiPromptTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 2,
+  },
+  aiPromptText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  aiButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+  },
+  aiButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  aiButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 160,
+    alignItems: "center",
+  },
+  aiButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   exportSection: {
     backgroundColor: colors.surface,

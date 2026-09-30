@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -12,6 +12,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { Transaction } from "../../../types/transaction";
 
@@ -39,6 +40,8 @@ import { colors, radii, screenStyles } from "../../../theme";
 
 const PRIMARY = colors.primary;
 const SECONDARY = colors.secondary;
+
+const BALANCE_VISIBILITY_KEY = "@dai_balance_visible";
 
 function formatTransactionTime(date: string) {
   return new Date(date).toLocaleTimeString([], {
@@ -71,6 +74,32 @@ export function DashboardScreen() {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
     [],
   );
+
+  // Load balance visibility preference on mount
+  useEffect(() => {
+    async function loadBalanceVisibility() {
+      try {
+        const stored = await AsyncStorage.getItem(BALANCE_VISIBILITY_KEY);
+        if (stored !== null) {
+          setBalanceVisible(stored === "true");
+        }
+      } catch (error) {
+        console.error("Failed to load balance visibility preference:", error);
+      }
+    }
+    loadBalanceVisibility();
+  }, []);
+
+  // Save balance visibility preference whenever it changes
+  const toggleBalanceVisibility = async () => {
+    const newValue = !balanceVisible;
+    setBalanceVisible(newValue);
+    try {
+      await AsyncStorage.setItem(BALANCE_VISIBILITY_KEY, String(newValue));
+    } catch (error) {
+      console.error("Failed to save balance visibility preference:", error);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -542,7 +571,7 @@ export function DashboardScreen() {
         {/* Balance */}
         <View style={{ alignItems: "center", marginTop: 28, marginBottom: 24 }}>
           <Pressable
-            onPress={() => setBalanceVisible((visible) => !visible)}
+            onPress={toggleBalanceVisibility}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -663,7 +692,9 @@ export function DashboardScreen() {
               color: SECONDARY,
             }}
           >
-            {formatCurrency(summary.income, currencyCode)}
+            {balanceVisible
+              ? formatCurrency(summary.income, currencyCode)
+              : "••••••"}
           </Text>
         </View>
         <View
@@ -697,7 +728,9 @@ export function DashboardScreen() {
               color: SECONDARY,
             }}
           >
-            {formatCurrency(summary.expenses, currencyCode)}
+            {balanceVisible
+              ? formatCurrency(summary.expenses, currencyCode)
+              : "••••••"}
           </Text>
         </View>
       </View>
@@ -1120,7 +1153,7 @@ export function DashboardScreen() {
                     style={{
                       fontSize: 15,
                       fontWeight: "700",
-                      color: isExpense ? SECONDARY : "#1a9c4b",
+                      color: isExpense ? "#e74c3c" : "#1a9c4b",
                     }}
                   >
                     {isExpense ? "-" : "+"}

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View, Animated } from "react-na
 
 import { setPin as savePin } from "../services/pinService";
 import { requireCurrentUserId } from "../services/currentUserService";
+import { colors } from "../../../theme";
 
 interface PinSetupScreenProps {
   onComplete?: () => void;
@@ -340,15 +341,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   button: {
-    backgroundColor: "#FBCC33",
+    backgroundColor: colors.secondary,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#FBCC33",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 4,
   },
   buttonPressed: {
@@ -361,7 +358,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#120E01",
+    color: colors.primary,
     letterSpacing: 0.2,
   },
 });

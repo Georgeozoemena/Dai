@@ -385,7 +385,7 @@ export function TransactionsScreen() {
                   style={{
                     fontSize: 16,
                     fontWeight: "700",
-                    color: isExpense ? colors.secondary : colors.success,
+                    color: isExpense ? colors.error : colors.success,
                   }}
                 >
                   {isExpense ? "-" : "+"}
