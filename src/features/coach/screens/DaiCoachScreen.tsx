@@ -164,6 +164,8 @@ export function DaiCoachScreen() {
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
   // ========== Export Functionality ==========
   const handleExportTransactions = async () => {
     if (!currentAccountId || exporting) return;
@@ -418,6 +420,7 @@ export function DaiCoachScreen() {
 
   return (
     <ScrollView
+      ref={scrollViewRef}
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
@@ -478,7 +481,8 @@ export function DaiCoachScreen() {
         <Pressable
           style={styles.sessionButton}
           onPress={() => {
-            // Scroll to AI insights below
+            // Scroll to AI insights section below
+            scrollViewRef.current?.scrollToEnd({ animated: true });
           }}
         >
           <Text style={styles.sessionButtonText}>View AI Insights</Text>
