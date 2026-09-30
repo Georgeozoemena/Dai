@@ -1,24 +1,16 @@
 import { Stack } from "expo-router";
 
-import { ThemeProvider } from "../contexts/ThemeContext";
+import { colors } from "../theme";
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <RootLayoutNav />
-    </ThemeProvider>
-  );
-}
-
-function RootLayoutNav() {
-  return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: "#FAFAFA" },
-        headerTintColor: "#120E01",
-        headerTitleStyle: { fontWeight: "700", color: "#120E01" },
+        headerStyle: { backgroundColor: colors.background },
+        headerTintColor: colors.secondary,
+        headerTitleStyle: { fontWeight: "700", color: colors.secondary },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: "#FAFAFA" },
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen

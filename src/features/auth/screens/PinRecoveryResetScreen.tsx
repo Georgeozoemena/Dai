@@ -232,7 +232,7 @@ export function PinRecoveryResetScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#ffffff",
   },
   content: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, Animated } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View, Animated, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
@@ -11,7 +11,6 @@ import {
   getBiometricTypeName,
   type BiometricCapabilities 
 } from "../services/biometricService";
-import { useTheme } from "../../../contexts/ThemeContext";
 import { colors } from "../../../theme";
 
 interface PinLockScreenProps {
@@ -19,7 +18,6 @@ interface PinLockScreenProps {
 }
 
 export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
-  const { colors, isDark } = useTheme();
   const [pin, setPin] = useState(["", "", "", ""]);
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
@@ -153,24 +151,24 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
   const isPinComplete = pin.every((digit) => digit !== "");
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       {/* Content */}
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoRow}>
-            <View style={[styles.logoShape, { backgroundColor: isDark ? colors.primary : "#120E01" }]} />
-            <View style={[styles.logoShape, { backgroundColor: isDark ? colors.primary : "#120E01" }]} />
+            <View style={[styles.logoShape, styles.shape1]} />
+            <View style={[styles.logoShape, styles.shape2]} />
           </View>
           <View style={styles.logoRow}>
-            <View style={[styles.logoShape, { backgroundColor: isDark ? colors.primary : "#120E01" }]} />
-            <View style={[styles.logoShape, { backgroundColor: isDark ? colors.primary : "#120E01" }]} />
+            <View style={[styles.logoShape, styles.shape3]} />
+            <View style={[styles.logoShape, styles.shape4]} />
           </View>
         </View>
 
         {/* Title */}
-        <Text style={[styles.title, { color: colors.text }]}>Enter PIN</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Text style={styles.title}>Enter PIN</Text>
+        <Text style={styles.subtitle}>
           Enter your 4-digit PIN to unlock your account
         </Text>
 
@@ -186,11 +184,8 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
               key={index} 
               style={[
                 styles.pinBox,
-                { backgroundColor: colors.surface, borderColor: colors.borderInput },
                 digit && styles.pinBoxFilled,
-                digit && { borderColor: colors.primary, backgroundColor: isDark ? "rgba(251, 204, 51, 0.1)" : "rgba(251, 204, 51, 0.05)" },
                 error && styles.pinBoxError,
-                error && { borderColor: colors.error, backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "rgba(229, 62, 62, 0.05)" },
               ]}
             >
               <TextInput
@@ -204,7 +199,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
                 secureTextEntry
               />
               {digit ? (
-                <View style={[styles.pinDot, { backgroundColor: colors.text }]} />
+                <View style={styles.pinDot} />
               ) : null}
             </View>
           ))}
@@ -212,12 +207,12 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
 
         {/* Error Message */}
         {error ? (
-          <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
+          <Text style={styles.error}>{error}</Text>
         ) : null}
 
         {/* Forgot PIN Link */}
         <Pressable onPress={handleForgotPin} style={styles.forgotPinContainer}>
-          <Text style={[styles.forgotPinText, { color: colors.text }]}>Forgot PIN?</Text>
+          <Text style={styles.forgotPinText}>Forgot PIN?</Text>
         </Pressable>
 
         {/* Biometric Button (if available) */}
@@ -226,16 +221,15 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
             onPress={handleBiometricAuth} 
             style={({ pressed }) => [
               styles.biometricButton,
-              { backgroundColor: colors.surface, borderColor: colors.borderInput },
-              pressed && styles.biometricButtonPressed,
+              pressed && styles.biometricButtonPressed
             ]}
           >
             <Ionicons 
               name={biometricCapabilities.biometricType === "facial" ? "scan" : "finger-print"} 
               size={22} 
-              color={colors.text} 
+              color="#120E01" 
             />
-            <Text style={[styles.biometricButtonText, { color: colors.text }]}>
+            <Text style={styles.biometricButtonText}>
               Use {getBiometricTypeName(biometricCapabilities.biometricType)}
             </Text>
           </Pressable>
@@ -250,12 +244,11 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
           disabled={!isPinComplete || checking}
           style={({ pressed }) => [
             styles.button,
-            { backgroundColor: colors.primary },
             (!isPinComplete || checking) && styles.buttonDisabled,
             pressed && !(!isPinComplete || checking) && styles.buttonPressed,
           ]}
         >
-          <Text style={[styles.buttonText, { color: isDark ? "#0A0A0A" : "#120E01" }]}>
+          <Text style={styles.buttonText}>
             {checking ? "Verifying..." : "Continue"}
           </Text>
         </Pressable>
@@ -267,7 +260,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#ffffff",
   },
   content: {
     flex: 1,

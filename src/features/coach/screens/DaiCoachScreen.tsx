@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Platform,
   Pressable,
   ScrollView,
@@ -42,103 +41,34 @@ import { trackEvent } from "../../../services/analytics/analyticsService";
 import { colors } from "../../../theme";
 import { formatCurrency } from "../../../utils/currency";
 
-// ========== 3D Animated AI Avatar Component ==========
+// ========== Static AI Avatar Component ==========
 function AnimatedAIAvatar({ isThinking }: { isThinking: boolean }) {
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    // Continuous rotation
-    Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 8000,
-        useNativeDriver: true,
-      }),
-    ).start();
-
-    // Breathing scale animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.05,
-          duration: isThinking ? 1000 : 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: isThinking ? 1000 : 2000,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-
-    // Glow pulse
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: isThinking ? 0.6 : 0.4,
-          duration: isThinking ? 800 : 1500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.2,
-          duration: isThinking ? 800 : 1500,
-          useNativeDriver: false,
-        }),
-      ]),
-    ).start();
-  }, [isThinking, rotateAnim, scaleAnim, glowAnim]);
-
-  const rotate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
-
   return (
     <View style={styles.aiAvatar}>
-      {/* Outer fading glow - multiple layers for smooth fade */}
-      <Animated.View
-        style={[
-          styles.aiGlowOuter,
-          {
-            opacity: glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.1, 0.3],
-            }),
-          },
-        ]}
-      />
-      <Animated.View
-        style={[
-          styles.aiGlowMiddle,
-          {
-            opacity: glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.2, 0.5],
-            }),
-          },
-        ]}
-      />
+      {/* Soft glow layers */}
+      <View style={[styles.aiGlowOuter, { opacity: 0.2 }]} />
+      <View style={[styles.aiGlowMiddle, { opacity: 0.35 }]} />
 
-      {/* 3D Ball with gradient */}
-      <Animated.View
-        style={{
-          transform: [{ scale: scaleAnim }, { rotate }],
-        }}
+      {/* 3D Ball with gradient - Vibrant Red */}
+      <LinearGradient
+        colors={["#FF6B4A", "#FF4520", "#E63900"]}
+        start={{ x: 0.3, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.aiAvatarCore}
       >
+        {/* Top shine effect for 3D appearance */}
+        <View style={styles.aiShine} />
+        
+        {/* Subtle gradient overlay for depth */}
         <LinearGradient
-          colors={["#FFE4A3", "#FBCC33", "#E6A700"]}
+          colors={["rgba(255, 255, 255, 0.4)", "transparent"]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.aiAvatarCore}
-        >
-          {/* Shine effect */}
-          <View style={styles.aiShine} />
-          <Ionicons name="sparkles" size={24} color="#FFFFFF" />
-        </LinearGradient>
-      </Animated.View>
+          end={{ x: 0.7, y: 0.7 }}
+          style={styles.aiShineOverlay}
+        />
+        
+        <Ionicons name="sparkles" size={24} color="#FFFFFF" />
+      </LinearGradient>
     </View>
   );
 }
@@ -831,14 +761,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.primary,
+    backgroundColor: "#FF6B4A",
   },
   aiGlowMiddle: {
     position: "absolute",
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.primary,
+    backgroundColor: "#FF5533",
   },
   aiAvatarCore: {
     width: 56,
@@ -846,22 +776,30 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
+    shadowColor: "#FF4520",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
     position: "relative",
     overflow: "hidden",
   },
   aiShine: {
     position: "absolute",
     top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    left: 12,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
+  },
+  aiShineOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 28,
   },
   sessionInfo: {
     flexDirection: "row",
