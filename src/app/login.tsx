@@ -1,5 +1,9 @@
-import { LoginScreen } from "../features/auth/screens/LoginScreen";
+/**
+ * Legacy login route - redirects to new auth system
+ * @deprecated Use /auth instead
+ */
+import { Redirect } from "expo-router";
 
 export default function LoginRoute() {
-  return <LoginScreen />;
+  return <Redirect href="/auth" />;
 }

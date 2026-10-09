@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DATABASE_NAME = "denari-v2";
-const DATABASE_VERSION = 4;
+const DATABASE_VERSION = 8;
 
 interface DenariDatabase {
   profiles: {
@@ -26,6 +26,14 @@ interface DenariDatabase {
     value: Record<string, unknown>;
   };
   savingsGoals: {
+    key: string;
+    value: Record<string, unknown>;
+  };
+  savingsContributions: {
+    key: string;
+    value: Record<string, unknown>;
+  };
+  notifications: {
     key: string;
     value: Record<string, unknown>;
   };
@@ -111,6 +119,84 @@ export function getDatabase() {
             });
 
             savingsGoalStore.createIndex("accountId", "accountId");
+          }
+        }
+
+        // Add initialBalance field to existing accounts in version 5
+        if (oldVersion < 5 && oldVersion > 0) {
+          console.log("Migrating accounts to add initialBalance for v5");
+          
+          if (db.objectStoreNames.contains("accounts")) {
+            const accountsStore = transaction.objectStore("accounts");
+            const request = accountsStore.getAll();
+            
+            request.onsuccess = () => {
+              const allAccounts = request.result;
+              
+              for (const account of allAccounts) {
+                if (!('initialBalance' in account)) {
+                  account.initialBalance = 0;
+                  accountsStore.put(account);
+                }
+              }
+              
+              console.log(`Migrated ${allAccounts.length} accounts with initialBalance field`);
+            };
+          }
+        }
+
+        // Add name and period fields to existing budgets in version 6
+        if (oldVersion < 6 && oldVersion > 0) {
+          console.log("Migrating budgets to add name and period for v6");
+          
+          if (db.objectStoreNames.contains("budgets")) {
+            const budgetsStore = transaction.objectStore("budgets");
+            const request = budgetsStore.getAll();
+            
+            request.onsuccess = () => {
+              const allBudgets = request.result;
+              
+              for (const budget of allBudgets) {
+                if (!('name' in budget)) {
+                  budget.name = 'My Budget';
+                }
+                if (!('period' in budget)) {
+                  budget.period = 'monthly';
+                }
+                budgetsStore.put(budget);
+              }
+              
+              console.log(`Migrated ${allBudgets.length} budgets with name and period fields`);
+            };
+          }
+        }
+
+        // Add notifications store in version 7
+        if (oldVersion < 7) {
+          console.log("Adding notifications store for v7");
+          
+          if (!db.objectStoreNames.contains("notifications")) {
+            console.log("Creating notifications store");
+            const notificationsStore = db.createObjectStore("notifications", {
+              keyPath: "id",
+            });
+
+            notificationsStore.createIndex("accountId", "accountId");
+            notificationsStore.createIndex("isRead", "isRead");
+          }
+        }
+
+        // Add savings contributions store in version 8
+        if (oldVersion < 8) {
+          console.log("Adding savings contributions store for v8");
+          
+          if (!db.objectStoreNames.contains("savingsContributions")) {
+            console.log("Creating savingsContributions store");
+            const contributionsStore = db.createObjectStore("savingsContributions", {
+              keyPath: "id",
+            });
+
+            contributionsStore.createIndex("goalId", "goalId");
           }
         }
         

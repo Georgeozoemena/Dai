@@ -3,6 +3,7 @@ import {
   transactionRepository,
 } from "../../../database/transaction";
 import { trackEvent } from "../../../services/analytics/analyticsService";
+import { checkLargeExpense } from "../../notifications/services/notificationTriggerService";
 
 export async function getTransactions(
   accountId: string,
@@ -24,6 +25,20 @@ export async function createTransaction(
   await transactionRepository.createTransaction(
     transaction,
   );
+
+  // Check for large expense notification (threshold: 50,000)
+  if (transaction.type === "expense") {
+    checkLargeExpense({
+      accountId: transaction.accountId,
+      transactionId: transaction.id,
+      amount: transaction.amount,
+      currencyCode: "₦", // TODO: Use actual currency from account
+      category: transaction.category,
+      threshold: 50000,
+    }).catch((error) => {
+      console.error("Failed to check large expense:", error);
+    });
+  }
 
   return transaction;
 }

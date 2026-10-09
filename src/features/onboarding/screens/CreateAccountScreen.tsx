@@ -14,6 +14,7 @@ import type { Account } from "../../../types/account";
 import { createAccount } from "../../accounts/services/accountService";
 import { CURRENCIES } from "../../../constants/currencies";
 import { generateId } from "../../../utils/id";
+import { colors } from "../../../theme";
 
 interface CreateAccountScreenProps {
   profileId: string;
@@ -25,6 +26,7 @@ export function CreateAccountScreen({
   onComplete,
 }: CreateAccountScreenProps) {
   const [name, setName] = useState("Main");
+  const [initialBalance, setInitialBalance] = useState("");
   const [currencyCode, setCurrencyCode] = useState("NGN");
   const [saving, setSaving] = useState(false);
 
@@ -62,6 +64,8 @@ export function CreateAccountScreen({
         profileId,
 
         name: name.trim(),
+
+        initialBalance: parseFloat(initialBalance) || 0,
 
         currencyCode,
 
@@ -120,6 +124,24 @@ export function CreateAccountScreen({
               placeholderTextColor="#ccc"
             />
           </View>
+        </View>
+
+        {/* Initial Balance */}
+        <View style={styles.inputWrapper}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="cash-outline" size={20} color="#666" style={styles.inputIcon} />
+            <TextInput
+              value={initialBalance}
+              onChangeText={setInitialBalance}
+              placeholder="0.00"
+              keyboardType="decimal-pad"
+              style={styles.input}
+              placeholderTextColor="#ccc"
+            />
+          </View>
+          <Text style={styles.inputHint}>
+            Enter your current account balance (optional)
+          </Text>
         </View>
 
         {/* Currency Selection */}
@@ -218,6 +240,13 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     letterSpacing: 0.3,
   },
+  inputHint: {
+    fontSize: 13,
+    color: "#999",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingTop: -4,
+  },
   section: {
     gap: 16,
     marginBottom: 24,
@@ -242,8 +271,8 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   currencyCardSelected: {
-    borderColor: "#1a1a1a",
-    backgroundColor: "#f9f9f9",
+    borderColor: "#1a1a1a2d",
+    backgroundColor: "#f5f5f5",
   },
   currencyLeft: {
     flexDirection: "row",
@@ -270,7 +299,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   submitButton: {
-    backgroundColor: "#120E01",
+    backgroundColor: colors.secondary,
     paddingVertical: 20,
     borderRadius: 16,
     alignItems: "center",
@@ -283,7 +312,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#FBCC33",
+    color: colors.primary,
     letterSpacing: 0.3,
   },
 });

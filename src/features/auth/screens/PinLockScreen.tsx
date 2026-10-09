@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, Animated, Platform } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View, Animated, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import { verifyPin } from "../services/pinService";
-import { requireCurrentUserId } from "../services/currentUserService";
+import { autoMigratePinOnEntry } from "../lib/pin/pinMigration";
+import { useAuthStore } from "../../../store/auth/authStore";
 import { 
   authenticateWithBiometrics, 
   checkBiometricCapabilities,
@@ -18,6 +19,7 @@ interface PinLockScreenProps {
 }
 
 export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
+  const user = useAuthStore((state) => state.user);
   const [pin, setPin] = useState(["", "", "", ""]);
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
@@ -96,32 +98,63 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
   };
 
   const handleUnlock = async () => {
+    // Prevent duplicate execution
+    if (checking) {
+      console.log('[PinLock] Already checking PIN, skipping duplicate call');
+      return;
+    }
+
     const pinCode = pin.join("");
     
     if (pinCode.length !== 4) {
       return setError("Please enter your 4-digit PIN.");
     }
 
+    // Check if user is authenticated
+    if (!user || !user.id) {
+      setError("No authenticated user found. Please log in again.");
+      console.error('[PinLock] No user in auth store');
+      return;
+    }
+
     try {
       setChecking(true);
       setError("");
 
-      const valid = await verifyPin(
-        await requireCurrentUserId(),
-        pinCode,
-      );
+      console.log('[PinLock] Verifying PIN for user:', user.id);
+      const valid = await verifyPin(user.id, pinCode);
 
       if (!valid) {
+        console.log('[PinLock] PIN verification failed');
         setError("Incorrect PIN. Please try again.");
         setPin(["", "", "", ""]);
         shakeInputs();
-        inputRefs[0].current?.focus();
+        setTimeout(() => inputRefs[0].current?.focus(), 100);
         return;
       }
 
+      console.log('[PinLock] PIN verified successfully');
+
+      // PIN is valid - auto-migrate from legacy plaintext to hashed if needed
+      try {
+        console.log('[PinLock] Running auto-migration...');
+        await autoMigratePinOnEntry(user.id, pinCode);
+        console.log('[PinLock] Auto-migration complete');
+      } catch (migrationError) {
+        console.error('[PinLock] Migration failed (non-fatal):', migrationError);
+        // Don't block unlock if migration fails
+      }
+
+      console.log('[PinLock] Calling onSuccess callback');
       onSuccess?.();
-    } catch {
-      setError("Unable to verify PIN.");
+    } catch (error) {
+      console.error('[PinLock] Unexpected error during PIN verification:', error);
+      
+      // Show specific error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[PinLock] Error details:', errorMessage);
+      
+      setError("Unable to verify PIN. Please try again.");
       shakeInputs();
     } finally {
       setChecking(false);
@@ -156,14 +189,11 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape1]} />
-            <View style={[styles.logoShape, styles.shape2]} />
-          </View>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape3]} />
-            <View style={[styles.logoShape, styles.shape4]} />
-          </View>
+          <Image
+            source={require('../../../../assets/MOVA.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Title */}
@@ -197,6 +227,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
                 maxLength={1}
                 style={styles.pinInput}
                 secureTextEntry
+                editable={!checking}
               />
               {digit ? (
                 <View style={styles.pinDot} />
@@ -211,7 +242,11 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
         ) : null}
 
         {/* Forgot PIN Link */}
-        <Pressable onPress={handleForgotPin} style={styles.forgotPinContainer}>
+        <Pressable 
+          onPress={handleForgotPin} 
+          style={styles.forgotPinContainer}
+          disabled={checking}
+        >
           <Text style={styles.forgotPinText}>Forgot PIN?</Text>
         </Pressable>
 
@@ -219,6 +254,7 @@ export function PinLockScreen({ onSuccess }: PinLockScreenProps) {
         {biometricCapabilities?.isAvailable && (
           <Pressable 
             onPress={handleBiometricAuth} 
+            disabled={checking}
             style={({ pressed }) => [
               styles.biometricButton,
               pressed && styles.biometricButtonPressed
@@ -270,41 +306,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignSelf: "center",
-    gap: 8,
-    marginBottom: 80,
+    marginBottom: 60,
   },
-  logoRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  logoShape: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#120E01",
-  },
-  shape1: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 10,
-    borderBottomLeftRadius: 16,
-  },
-  shape2: {
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 8,
-  },
-  shape3: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 6,
-    borderBottomLeftRadius: 20,
-  },
-  shape4: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 16,
-    borderBottomLeftRadius: 10,
+  logo: {
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 26,

@@ -24,6 +24,12 @@ const settingsItems = [
     route: "/profile",
   },
   {
+    title: "Linked Accounts",
+    description: "Manage sign-in methods and providers",
+    icon: "link-outline" as const,
+    route: "/auth/linked-accounts",
+  },
+  {
     title: "Accounts",
     description: "Manage your financial accounts",
     icon: "wallet-outline" as const,
@@ -59,12 +65,12 @@ export function SettingsScreen() {
   const user = useAuthStore((state) => state.user);
   
   const handleLogout = async () => {
-    console.log("🔴 Logout button pressed");
+    console.log("Logout button pressed");
     
     // For web, use window.confirm; for native use Alert
     if (Platform.OS === "web") {
       const confirmed = window.confirm(
-        "Log out?\n\nYou'll need to sign in with Google again to access Dai."
+        "Log out?\n\nYou'll need to sign in again to access Dai."
       );
       
       if (!confirmed) {
@@ -72,11 +78,11 @@ export function SettingsScreen() {
         return;
       }
       
-      console.log("🔴 User confirmed logout");
+      console.log("User confirmed logout");
       try {
         await logoutUser();
-        console.log("🔴 Navigating to login...");
-        router.replace("/login");
+        console.log("Navigating to auth...");
+        router.replace("/auth");
       } catch (error) {
         console.error("LOGOUT FAILED:", error);
         window.alert("Logout failed. Please try again.");
@@ -84,7 +90,7 @@ export function SettingsScreen() {
     } else {
       Alert.alert(
         "Log out?",
-        "You'll need to sign in with Google again to access Dai.",
+        "You'll need to sign in again to access Dai.",
         [
           {
             text: "Cancel",
@@ -95,11 +101,11 @@ export function SettingsScreen() {
             text: "Log out",
             style: "destructive",
             onPress: async () => {
-              console.log("🔴 User confirmed logout");
+              console.log("User confirmed logout");
               try {
                 await logoutUser();
-                console.log("🔴 Navigating to login...");
-                router.replace("/login");
+                console.log("Navigating to auth...");
+                router.replace("/auth");
               } catch (error) {
                 console.error("LOGOUT FAILED:", error);
                 Alert.alert(

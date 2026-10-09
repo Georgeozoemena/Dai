@@ -18,6 +18,22 @@ export async function getBudget(
   );
 }
 
+export async function getAllBudgets(
+  accountId: string,
+) {
+  return budgetRepository.getAllBudgets(
+    accountId,
+  );
+}
+
+export async function getBudgetById(
+  budgetId: string,
+) {
+  return budgetRepository.getBudgetById(
+    budgetId,
+  );
+}
+
 export async function getBudgetCategories(
   budgetId: string,
 ) {

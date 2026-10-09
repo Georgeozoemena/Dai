@@ -1,7 +1,8 @@
 import Constants from "expo-constants";
 import { AppState, Platform } from "react-native";
 
-import { getStoredAuth } from "../../features/auth/services/authStorage";
+import { tokenManager } from "../../features/auth/lib/tokens/tokenManager";
+import { authClient } from "../../features/auth/lib/authClient";
 
 const API_URL =
   Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL ||
@@ -158,16 +159,17 @@ async function flushQueue(): Promise<void> {
   isFlushing = true;
 
   try {
-    const auth = await getStoredAuth();
+    // Check if user is authenticated (has access token)
+    const accessToken = await tokenManager.getAccessToken();
 
     // Not signed in — keep events queued until there is a session.
-    if (!auth) {
+    if (!accessToken) {
       return;
     }
 
     while (queue.length > 0) {
       const batch = queue.slice(0, MAX_BATCH_SIZE);
-      const result = await sendBatch(batch, auth.token);
+      const result = await sendBatch(batch);
 
       if (result === "retry") {
         return;
@@ -197,13 +199,13 @@ async function sendHeartbeat(): Promise<void> {
   lastHeartbeatAt = now;
 
   try {
-    const auth = await getStoredAuth();
+    const accessToken = await tokenManager.getAccessToken();
 
-    if (!auth) {
+    if (!accessToken) {
       return;
     }
 
-    await sendBatch([], auth.token);
+    await sendBatch([]);
   } catch {
     // Silent by design.
   }
@@ -211,29 +213,21 @@ async function sendHeartbeat(): Promise<void> {
 
 async function sendBatch(
   events: QueuedEvent[],
-  token: string,
 ): Promise<BatchResult> {
   const appVersion = Constants.expoConfig?.version;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_URL}/api/activity`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        events: events.map((event) =>
-          event.metadata
-            ? { name: event.name, metadata: event.metadata }
-            : { name: event.name },
-        ),
-        platform: Platform.OS,
-        ...(appVersion ? { appVersion } : {}),
-      }),
-      signal: controller.signal,
+    // Use authClient for automatic token handling
+    const response = await authClient.post('/activity', {
+      events: events.map((event) =>
+        event.metadata
+          ? { name: event.name, metadata: event.metadata }
+          : { name: event.name },
+      ),
+      platform: Platform.OS,
+      ...(appVersion ? { appVersion } : {}),
     });
 
     if (response.ok) {

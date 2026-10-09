@@ -1,4 +1,4 @@
-import type { SavingsGoal } from "../../types/savingsGoal";
+import type { SavingsGoal, SavingsContribution } from "../../types/savingsGoal";
 
 export interface SavingsGoalRepository {
   getSavingsGoals(accountId: string): Promise<SavingsGoal[]>;
@@ -10,4 +10,11 @@ export interface SavingsGoalRepository {
   updateSavingsGoal(goal: SavingsGoal): Promise<void>;
 
   deleteSavingsGoal(id: string): Promise<void>;
+
+  // Contributions
+  getContributions(goalId: string): Promise<SavingsContribution[]>;
+
+  createContribution(contribution: SavingsContribution): Promise<void>;
+
+  deleteContribution(id: string): Promise<void>;
 }

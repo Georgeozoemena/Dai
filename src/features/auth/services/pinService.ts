@@ -1,80 +1,105 @@
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+/**
+ * PIN Service - Legacy Compatibility Layer
+ * 
+ * This file maintains backward compatibility with existing code
+ * while using the new hashed PIN system under the hood.
+ * 
+ * MIGRATION NOTES:
+ * - setPin() now hashes PINs before storage
+ * - verifyPin() handles both legacy plaintext and new hashed PINs
+ * - Auto-migration happens transparently on first PIN verification
+ */
 
-const getPinKey = (userId: string) =>
-  `dai_pin_${userId}`;
+import {
+  setupPin,
+  validatePin,
+  userHasPin,
+  clearHashedPin,
+  autoMigratePinOnEntry,
+  hasLegacyPin,
+  getLegacyPin
+} from '../lib/pin';
 
-const storage = {
-  async setItem(key: string, value: string) {
-    if (Platform.OS === "web") {
-      localStorage.setItem(key, value);
-      return;
-    }
-
-    await SecureStore.setItemAsync(key, value);
-  },
-
-  async getItem(key: string): Promise<string | null> {
-    if (Platform.OS === "web") {
-      return localStorage.getItem(key);
-    }
-
-    return SecureStore.getItemAsync(key);
-  },
-
-  async removeItem(key: string) {
-    if (Platform.OS === "web") {
-      localStorage.removeItem(key);
-      return;
-    }
-
-    await SecureStore.deleteItemAsync(key);
-  },
-};
-
+/**
+ * Set up PIN (hashed)
+ * @deprecated Consider using setupPin() from '../lib/pin' directly
+ */
 export async function setPin(
   userId: string,
   pin: string,
-) {
-  await storage.setItem(
-    getPinKey(userId),
-    pin,
-  );
+): Promise<void> {
+  const result = await setupPin(userId, pin);
+  
+  if (!result.isValid) {
+    throw new Error(result.error || 'Failed to set PIN');
+  }
 }
 
-export async function getPin(
-  userId: string,
-) {
-  return storage.getItem(
-    getPinKey(userId),
-  );
-}
-
+/**
+ * Check if user has PIN configured
+ * @deprecated Consider using userHasPin() from '../lib/pin' directly
+ */
 export async function hasPin(
   userId: string,
-) {
-  const pin = await getPin(userId);
-
-  return !!pin;
+): Promise<boolean> {
+  // Check both hashed and legacy PIN
+  const hasNew = await userHasPin(userId);
+  const hasLegacy = await hasLegacyPin(userId);
+  
+  return hasNew || hasLegacy;
 }
 
+/**
+ * Verify PIN (with automatic migration)
+ * Handles both legacy plaintext and new hashed PINs
+ * @deprecated Consider using validatePin() from '../lib/pin' directly
+ */
 export async function verifyPin(
   userId: string,
   pin: string,
-) {
-  const storedPin = await getPin(userId);
+): Promise<boolean> {
+  // Try new hashed PIN first
+  const hashedResult = await validatePin(userId, pin);
+  if (hashedResult.isValid) {
+    return true;
+  }
 
-  if (!storedPin) {
+  // Check if user has legacy plaintext PIN
+  const hasLegacy = await hasLegacyPin(userId);
+  if (!hasLegacy) {
     return false;
   }
 
-  return storedPin === pin;
+  // Verify against legacy plaintext PIN
+  const legacyPin = await getLegacyPin(userId);
+  if (legacyPin === pin) {
+    // PIN matches! Auto-migrate to hashed version
+    console.log('[PinService] Legacy PIN verified, migrating...');
+    await autoMigratePinOnEntry(userId, pin);
+    return true;
+  }
+
+  return false;
 }
 
+/**
+ * Clear PIN
+ * @deprecated Consider using clearHashedPin() from '../lib/pin' directly
+ */
 export async function clearPin(
   userId: string,
-) {
-  await storage.removeItem(
-    getPinKey(userId),
-  );
+): Promise<void> {
+  await clearHashedPin(userId);
+}
+
+/**
+ * Legacy getPin() - NO LONGER SUPPORTED
+ * PINs are now hashed and cannot be retrieved in plaintext
+ * @deprecated This function always returns null. Use verifyPin() instead.
+ */
+export async function getPin(
+  userId: string,
+): Promise<string | null> {
+  console.warn('[PinService] getPin() is deprecated. PINs are now hashed and cannot be retrieved.');
+  return null;
 }

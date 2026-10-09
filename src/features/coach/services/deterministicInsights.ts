@@ -155,19 +155,31 @@ export function buildDeterministicInsights({
   // Net position for the month
   if (overview.incomeTotal > 0) {
     const net = overview.incomeTotal - overview.expensesTotal;
+    const expenseRatio = overview.expensesTotal / overview.incomeTotal;
 
-    insights.push({
-      id: "net-position",
-      tone: net >= 0 ? "positive" : "attention",
-      message:
-        net >= 0
-          ? `You're ${format(net)} in the positive this month: income of ${format(
-              overview.incomeTotal,
-            )} against ${format(overview.expensesTotal)} of spending.`
-          : `Spending is ${format(
-              Math.abs(net),
-            )} more than your income of ${format(overview.incomeTotal)} this month.`,
-    });
+    // Warning: expenses are 75-100% of income
+    if (expenseRatio >= 0.75 && net >= 0) {
+      insights.push({
+        id: "net-position",
+        tone: "attention",
+        message: `Warning: You're ${format(net)} in the positive this month: income of ${format(
+          overview.incomeTotal,
+        )} against ${format(overview.expensesTotal)} of spending. You're close to your limit!`,
+      });
+    } else {
+      insights.push({
+        id: "net-position",
+        tone: net >= 0 ? "positive" : "attention",
+        message:
+          net >= 0
+            ? `You're ${format(net)} in the positive this month: income of ${format(
+                overview.incomeTotal,
+              )} against ${format(overview.expensesTotal)} of spending.`
+            : `Spending is ${format(
+                Math.abs(net),
+              )} more than your income of ${format(overview.incomeTotal)} this month.`,
+      });
+    }
   }
 
   if (overview.expensesTotal === 0) {

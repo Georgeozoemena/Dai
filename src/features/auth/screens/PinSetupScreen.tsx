@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, Animated } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View, Animated, Image } from "react-native";
 
 import { setPin as savePin } from "../services/pinService";
-import { requireCurrentUserId } from "../services/currentUserService";
+import { useAuthStore } from "../../../store/auth/authStore";
 import { colors } from "../../../theme";
 
 interface PinSetupScreenProps {
@@ -10,6 +10,7 @@ interface PinSetupScreenProps {
 }
 
 export function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
+  const user = useAuthStore((state) => state.user);
   const [step, setStep] = useState<"create" | "confirm">("create");
   const [pin, setPin] = useState(["", "", "", ""]);
   const [confirmPin, setConfirmPin] = useState(["", "", "", ""]);
@@ -124,18 +125,40 @@ export function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
       return;
     }
 
+    // Check if user is authenticated
+    if (!user || !user.id) {
+      setError("No authenticated user found. Please log in again.");
+      console.error('[PinSetup] No user in auth store');
+      return;
+    }
+
     try {
       setSaving(true);
       setError("");
 
-      await savePin(
-        await requireCurrentUserId(),
-        pinCode,
-      );
+      console.log('[PinSetup] Saving PIN for user:', user.id);
+      await savePin(user.id, pinCode);
+      console.log('[PinSetup] PIN saved successfully');
 
       onComplete?.();
-    } catch {
-      setError("Unable to create PIN.");
+    } catch (err) {
+      console.error('[PinSetup] Failed to save PIN:', err);
+      
+      // Show specific error message from PIN validator
+      const errorMessage = err instanceof Error ? err.message : "Unable to create PIN.";
+      setError(errorMessage);
+      
+      // Reset PIN inputs
+      setConfirmPin(["", "", "", ""]);
+      shakeInputs();
+      
+      // Go back to create step if it was a validation error
+      if (errorMessage.includes("too simple") || errorMessage.includes("weak")) {
+        setStep("create");
+        setPin(["", "", "", ""]);
+      }
+      
+      inputRefs[0].current?.focus();
     } finally {
       setSaving(false);
     }
@@ -149,14 +172,11 @@ export function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape1]} />
-            <View style={[styles.logoShape, styles.shape2]} />
-          </View>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape3]} />
-            <View style={[styles.logoShape, styles.shape4]} />
-          </View>
+          <Image
+            source={require('../../../../assets/MOVA.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Title */}
@@ -242,41 +262,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignSelf: "center",
-    gap: 8,
-    marginBottom: 80,
+    marginBottom: 60,
   },
-  logoRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  logoShape: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#120E01",
-  },
-  shape1: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 10,
-    borderBottomLeftRadius: 16,
-  },
-  shape2: {
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 8,
-  },
-  shape3: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 6,
-    borderBottomLeftRadius: 20,
-  },
-  shape4: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 16,
-    borderBottomLeftRadius: 10,
+  logo: {
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 26,

@@ -12,12 +12,12 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { Transaction } from "../../../types/transaction";
 
 import { useAccountStore } from "../../../store/account/accountStore";
 import { useAuthStore } from "../../../store/auth/authStore";
+import { useBudgetStore } from "../../../store/budget/budgetStore";
 
 import { getAccount } from "../../accounts/services/accountService";
 
@@ -30,9 +30,12 @@ import { calculateDashboardSummary } from "../services/dashboardService";
 import {
   getBudget,
   getBudgetCategories,
+  getAllBudgets,
 } from "../../budget/services/budgetService";
 
 import { calculateBudgetCategorySummaries } from "../../budget/services/budgetCalculationService";
+
+import { getNotifications } from "../../notifications/services/notificationService";
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
@@ -40,8 +43,6 @@ import { colors, radii, screenStyles } from "../../../theme";
 
 const PRIMARY = colors.primary;
 const SECONDARY = colors.secondary;
-
-const BALANCE_VISIBILITY_KEY = "@dai_balance_visible";
 
 function formatTransactionTime(date: string) {
   return new Date(date).toLocaleTimeString([], {
@@ -54,6 +55,7 @@ export function DashboardScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
   const clearCurrentAccount = useAccountStore((state) => state.clearCurrentAccount);
   const user = useAuthStore((state) => state.user);
+  const selectedBudgetId = useBudgetStore((state) => state.selectedBudgetId);
   const currencyCode = useAccountCurrency();
 
   const [accountName, setAccountName] = useState("");
@@ -62,44 +64,25 @@ export function DashboardScreen() {
 
   const [loading, setLoading] = useState(true);
 
-  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [monthlySummary, setMonthlySummary] = useState<{
+    income: number;
+    expenses: number;
+    netSavings: number;
+  }>({ income: 0, expenses: 0, netSavings: 0 });
 
   const [budgetHealth, setBudgetHealth] = useState<{
     totalBudget: number;
     totalSpent: number;
     percentage: number;
     status: "healthy" | "warning" | "exceeded";
+    budgetName: string;
   } | null>(null);
 
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
     [],
   );
 
-  // Load balance visibility preference on mount
-  useEffect(() => {
-    async function loadBalanceVisibility() {
-      try {
-        const stored = await AsyncStorage.getItem(BALANCE_VISIBILITY_KEY);
-        if (stored !== null) {
-          setBalanceVisible(stored === "true");
-        }
-      } catch (error) {
-        console.error("Failed to load balance visibility preference:", error);
-      }
-    }
-    loadBalanceVisibility();
-  }, []);
-
-  // Save balance visibility preference whenever it changes
-  const toggleBalanceVisibility = async () => {
-    const newValue = !balanceVisible;
-    setBalanceVisible(newValue);
-    try {
-      await AsyncStorage.setItem(BALANCE_VISIBILITY_KEY, String(newValue));
-    } catch (error) {
-      console.error("Failed to save balance visibility preference:", error);
-    }
-  };
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -134,23 +117,55 @@ export function DashboardScreen() {
 
           const month = new Date().toISOString().slice(0, 7);
 
-          const budgetData = await getBudget(currentAccountId, month);
+          console.log('[Dashboard] Loading budget - selectedBudgetId:', selectedBudgetId ? selectedBudgetId.slice(0, 8) : 'none');
+
+          // Use the selected budget from the store if available
+          let budgetData = null;
+          
+          if (selectedBudgetId) {
+            // Try to get the specific selected budget
+            const allBudgets = await getAllBudgets(currentAccountId);
+            budgetData = allBudgets.find(b => b.id === selectedBudgetId) || null;
+            console.log('[Dashboard] Found selected budget:', budgetData ? budgetData.name : 'not found');
+          }
+          
+          // Fallback: if no budget selected or selected budget not found, use the most recent one
+          if (!budgetData) {
+            const allBudgets = await getAllBudgets(currentAccountId);
+            budgetData = allBudgets.length > 0 ? allBudgets[0] : null;
+            console.log('[Dashboard] Using fallback budget:', budgetData ? budgetData.name : 'none available');
+          }
 
           if (budgetData) {
+            console.log('[Dashboard] Displaying budget:', { 
+              id: budgetData.id.slice(0, 8), 
+              name: budgetData.name, 
+              month: budgetData.month,
+              totalBudget: budgetData.totalBudget 
+            });
+
             const budgetCategories = await getBudgetCategories(budgetData.id);
 
+            console.log('[Dashboard] Budget categories:', budgetCategories.length);
+
             const transactions = await getTransactions(currentAccountId);
+
+            console.log('[Dashboard] Transactions for calculation:', transactions.length);
 
             const summaries = calculateBudgetCategorySummaries(
               budgetCategories,
               transactions,
-              month,
+              budgetData.month, // Use the budget's actual month identifier
             );
+
+            console.log('[Dashboard] Calculated summaries:', summaries.length);
 
             const totalSpent = summaries.reduce(
               (total, category) => total + category.spent,
               0,
             );
+
+            console.log('[Dashboard] Total spent:', totalSpent, 'of', budgetData.totalBudget);
 
             const percentage =
               budgetData.totalBudget > 0
@@ -169,8 +184,10 @@ export function DashboardScreen() {
               totalSpent,
               percentage,
               status,
+              budgetName: budgetData.name,
             });
           } else {
+            console.log('[Dashboard] No budget found for account');
             setBudgetHealth(null);
           }
 
@@ -183,6 +200,29 @@ export function DashboardScreen() {
             .slice(0, 5);
 
           setRecentTransactions(recent);
+
+          // Calculate monthly financial summary
+          const now = new Date();
+          const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+          
+          const monthlyIncome = transactions
+            .filter((t) => t.type === "income" && t.date.startsWith(currentMonth))
+            .reduce((sum, t) => sum + t.amount, 0);
+          
+          const monthlyExpenses = transactions
+            .filter((t) => t.type === "expense" && t.date.startsWith(currentMonth))
+            .reduce((sum, t) => sum + t.amount, 0);
+          
+          setMonthlySummary({
+            income: monthlyIncome,
+            expenses: monthlyExpenses,
+            netSavings: monthlyIncome - monthlyExpenses,
+          });
+
+          // Get unread notification count
+          const notifications = await getNotifications(currentAccountId);
+          const unreadCount = notifications.filter(n => !n.isRead).length;
+          setUnreadNotificationCount(unreadCount);
         } catch (error) {
           console.error("FAILED TO LOAD DASHBOARD:", error);
         } finally {
@@ -191,7 +231,7 @@ export function DashboardScreen() {
       }
 
       loadDashboard();
-    }, [currentAccountId]),
+    }, [currentAccountId, selectedBudgetId]),
   );
 
   if (loading) {
@@ -243,6 +283,32 @@ export function DashboardScreen() {
             }}
           >
             <Ionicons name="notifications-outline" size={24} color="#1a1a1a" />
+            {unreadNotificationCount > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  backgroundColor: "#ef4444",
+                  borderRadius: 10,
+                  minWidth: 20,
+                  height: 20,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: "700",
+                  }}
+                >
+                  {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+                </Text>
+              </View>
+            )}
           </Pressable>
         </View>
 
@@ -480,7 +546,7 @@ export function DashboardScreen() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Hero Balance Card */}
+      {/* Hero Card - Monthly Financial Summary */}
       <View
         style={{
           backgroundColor: SECONDARY,
@@ -565,34 +631,46 @@ export function DashboardScreen() {
             }}
           >
             <Ionicons name="notifications-outline" size={20} color="#fff" />
+            {unreadNotificationCount > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  backgroundColor: "#ef4444",
+                  borderRadius: 10,
+                  minWidth: 20,
+                  height: 20,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: "700",
+                  }}
+                >
+                  {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+                </Text>
+              </View>
+            )}
           </Pressable>
         </View>
 
-        {/* Balance */}
+        {/* Monthly Summary */}
         <View style={{ alignItems: "center", marginTop: 28, marginBottom: 24 }}>
-          <Pressable
-            onPress={toggleBalanceVisibility}
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
+              color: "rgba(255,255,255,0.7)",
+              fontSize: 14,
+              fontWeight: "500",
             }}
           >
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.7)",
-                fontSize: 14,
-                fontWeight: "500",
-              }}
-            >
-              Total Balance
-            </Text>
-            <Ionicons
-              name={balanceVisible ? "eye-outline" : "eye-off-outline"}
-              size={16}
-              color="rgba(255,255,255,0.7)"
-            />
-          </Pressable>
+            This Month
+          </Text>
           <Text
             style={{
               marginTop: 10,
@@ -602,20 +680,96 @@ export function DashboardScreen() {
               letterSpacing: -0.5,
             }}
           >
-            {balanceVisible
-              ? formatCurrency(summary.balance, currencyCode)
-              : "••••••••"}
+            {monthlySummary.netSavings < 0 ? "-" : ""}
+            {formatCurrency(Math.abs(monthlySummary.netSavings), currencyCode)}
           </Text>
           <Text
             style={{
               marginTop: 6,
-              color: "rgba(255,255,255,0.5)",
+              color: monthlySummary.netSavings < 0 
+                ? "#ef4444" 
+                : monthlySummary.expenses >= monthlySummary.income * 0.75
+                ? "#e6a700"
+                : "#4ade80",
               fontSize: 13,
               fontWeight: "500",
             }}
           >
-            {accountName}
+            {monthlySummary.netSavings >= 0 
+              ? monthlySummary.expenses >= monthlySummary.income * 0.75
+                ? "Almost exceeding Income"
+                : "Net Savings"
+              : "Net Deficit"
+            } · {accountName}
           </Text>
+        </View>
+
+        {/* Quick Stats - Income and Expenses */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            marginBottom: 16,
+            
+            // backgroundColor: "rgba(255,255,255,0.08)",
+            borderRadius: 14,
+            padding: 14,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.6)",
+                fontSize: 12,
+                fontWeight: "500",
+                marginBottom: 6,
+                textAlign: "center",
+              }}
+            >
+              Income
+            </Text>
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 16,
+                fontWeight: "700",
+                textAlign: "center",
+              }}
+            >
+              {formatCurrency(monthlySummary.income, currencyCode)}
+            </Text>
+          </View>
+          
+          <View
+            style={{
+              width: 1,
+              backgroundColor: "rgba(255,255,255,0.15)",
+            }}
+          />
+          
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.6)",
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: "500",
+                marginBottom: 6,
+              }}
+            >
+              Expenses
+            </Text>
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 16,
+                fontWeight: "700",
+                textAlign: "center",
+              }}
+            >
+              {formatCurrency(monthlySummary.expenses, currencyCode)}
+            </Text>
+          </View>
         </View>
 
         {/* Action buttons */}
@@ -659,78 +813,79 @@ export function DashboardScreen() {
         </View>
       </View>
 
-      {/* Income / Expenses summary */}
+      {/* Income / Expenses Summary */}
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View
           style={{
             flex: 1,
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 16,
+            padding: 18,
+            borderRadius: 20,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 12,
+            }}
+          >
             <View
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                backgroundColor: "rgba(26,156,75,0.12)",
+                width: 36,
+                height: 36,
+                borderRadius: 20,
+                backgroundColor: "rgba(26,156,75,0.1)",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Ionicons name="arrow-down" size={14} color="#1a9c4b" />
+              <Ionicons name="arrow-down" size={18} color="#1a9c4b" />
             </View>
-            <Text style={{ color: "#888", fontSize: 13 }}>Income</Text>
+            <Text style={{ fontSize: 13, color: "#999", fontWeight: "500" }}>
+              Income
+            </Text>
           </View>
-          <Text
-            style={{
-              marginTop: 10,
-              fontSize: 18,
-              fontWeight: "700",
-              color: SECONDARY,
-            }}
-          >
-            {balanceVisible
-              ? formatCurrency(summary.income, currencyCode)
-              : "••••••"}
+          <Text style={{ fontSize: 20, fontWeight: "700", color: SECONDARY }}>
+            {formatCurrency(summary.income, currencyCode)}
           </Text>
         </View>
+
         <View
           style={{
             flex: 1,
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 16,
+            padding: 18,
+            borderRadius: 20,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 12,
+            }}
+          >
             <View
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                backgroundColor: "rgba(244,67,54,0.1)",
+                width: 36,
+                height: 36,
+                borderRadius: 20,
+                backgroundColor: "rgba(231,76,60,0.1)",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Ionicons name="arrow-up" size={14} color="#f44336" />
+              <Ionicons name="arrow-up" size={18} color="#e74c3c" />
             </View>
-            <Text style={{ color: "#888", fontSize: 13 }}>Expenses</Text>
+            <Text style={{ fontSize: 13, color: "#999", fontWeight: "500" }}>
+              Expenses
+            </Text>
           </View>
-          <Text
-            style={{
-              marginTop: 10,
-              fontSize: 18,
-              fontWeight: "700",
-              color: SECONDARY,
-            }}
-          >
-            {balanceVisible
-              ? formatCurrency(summary.expenses, currencyCode)
-              : "••••••"}
+          <Text style={{ fontSize: 20, fontWeight: "700", color: SECONDARY }}>
+            {formatCurrency(summary.expenses, currencyCode)}
           </Text>
         </View>
       </View>
@@ -760,36 +915,36 @@ export function DashboardScreen() {
             {
               label: "Accounts",
               icon: "wallet" as const,
-              color: "#fff3ce", // Faint shade of #120E01
-              iconColor: "#120E01",
+              color: colors.secondary, // Faint shade of #120E01
+              iconColor: colors.primary,
               route: "/(tabs)/accounts" as const,
             },
             {
               label: "Activity",
               icon: "list" as const,
-              color: "#fff3ce", // Faint shade of #120E01
-              iconColor: "#120E01",
+              color: colors.secondary, // Faint shade of #120E01
+              iconColor: colors.primary,
               route: "/(tabs)/activity" as const,
             },
             {
               label: "Budget",
               icon: "pie-chart" as const,
-              color: "#fff3ce", // Faint shade of #120E01
-              iconColor: "#120E01",
+              color: colors.secondary, // Faint shade of #120E01
+              iconColor: colors.primary,
               route: "/(tabs)/budget" as const,
             },
             {
               label: "Goals",
               icon: "flag" as const,
-              color: "#fff3ce", // Faint shade of #120E01
-              iconColor: "#120E01",
+              color: colors.secondary, // Faint shade of #120E01
+              iconColor: colors.primary,
               route: "/savings-goals" as const,
             },
             {
               label: "AI Coach",
               icon: "sparkles" as const,
-              color: "#fff3ce", // Faint shade of #120E01
-              iconColor: "#120E01",
+              color: colors.secondary, // Faint shade of #120E01
+              iconColor: colors.primary,
               route: "/coach" as const,
             },
           ].map((action) => (
@@ -842,7 +997,7 @@ export function DashboardScreen() {
           }}
         >
           <LinearGradient
-            colors={["#E27925", "#C51E05"]}
+            colors={['#B8F34A', '#9DD635']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
@@ -867,10 +1022,10 @@ export function DashboardScreen() {
                 style={{
                   fontSize: 22,
                   fontWeight: "700",
-                  color: "#fff",
+                  color: "#111111",
                 }}
               >
-                Monthly Budget
+                {budgetHealth.budgetName}
               </Text>
 
               <View
@@ -887,7 +1042,7 @@ export function DashboardScreen() {
                   style={{
                     fontSize: 13,
                     fontWeight: "700",
-                    color: budgetHealth.status === "healthy" ? "#087300" : "#d00",
+                    color: budgetHealth.status === "healthy" ? "#087300" : budgetHealth.status === "warning" ? "#e6a700" : "#d00",
                   }}
                 >
                   {budgetHealth.status === "healthy"
@@ -904,7 +1059,7 @@ export function DashboardScreen() {
               style={{
                 fontSize: 14,
                 fontWeight: "400",
-                color: "#fff",
+                color: "rgba(17, 17, 17, 0.85)",
                 marginBottom: 12,
               }}
             >
@@ -912,18 +1067,18 @@ export function DashboardScreen() {
               {formatCurrency(budgetHealth.totalBudget, currencyCode)}
             </Text>
 
-            {/* Progress bar - 14px height with white gradient fill */}
+            {/* Progress bar - 14px height with dark gradient fill */}
             <View
               style={{
                 height: 14,
-                backgroundColor: "rgba(255,255,255,0.15)",
+                backgroundColor: "rgba(17, 17, 17, 0.15)",
                 borderRadius: 20,
                 overflow: "hidden",
                 marginBottom: 8,
               }}
             >
               <LinearGradient
-                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.6)']} // White gradient blend
+                colors={['rgba(17, 17, 17, 0.9)', 'rgba(17, 17, 17, 0.6)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -938,7 +1093,7 @@ export function DashboardScreen() {
             <Text
               style={{
                 fontSize: 13,
-                color: "rgba(255,255,255,0.85)",
+                color: "rgba(17, 17, 17, 0.75)",
                 marginBottom: 20,
               }}
             >
@@ -957,12 +1112,12 @@ export function DashboardScreen() {
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
-                  color: "#fff",
+                  color: "#111111",
                 }}
               >
                 View Budget
               </Text>
-              <Ionicons name="arrow-forward" size={16} color="#fff" />
+              <Ionicons name="arrow-forward" size={16} color="#111111" />
             </View>
 
             {/* Stacked coins illustration - flipped and positioned */}
@@ -1000,12 +1155,12 @@ export function DashboardScreen() {
               width: 44,
               height: 44,
               borderRadius: 22,
-              backgroundColor: "rgba(251,204,51,0.2)",
+              backgroundColor: colors.secondary,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Ionicons name="flag" size={20} color={SECONDARY} />
+            <Ionicons name="flag" size={20} color={PRIMARY} />
           </View>
           <View>
             <Text

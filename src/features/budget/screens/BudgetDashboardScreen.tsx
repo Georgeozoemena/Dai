@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,8 +17,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { Budget, BudgetCategory } from "../types/budget";
 
 import { useAccountStore } from "../../../store/account/accountStore";
+import { useBudgetStore } from "../../../store/budget/budgetStore";
 
-import { getBudget, getBudgetCategories } from "../services/budgetService";
+import { getAllBudgets, getBudgetCategories, deleteBudget } from "../services/budgetService";
 
 import { getTransactions } from "../../transactions/services/transactionService";
 
@@ -25,11 +28,15 @@ import {
   type BudgetCategorySummary,
 } from "../services/budgetCalculationService";
 import { colors, screenStyles } from "../../../theme";
+import { checkBudgetHealth } from "../../notifications/services/notificationTriggerService";
 
 export function BudgetDashboardScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
+  const selectedBudgetId = useBudgetStore((state) => state.selectedBudgetId);
+  const setSelectedBudgetId = useBudgetStore((state) => state.setSelectedBudget);
 
-  const [budget, setBudget] = useState<Budget | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
 
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
 
@@ -38,52 +45,179 @@ export function BudgetDashboardScreen() {
   >([]);
 
   const [loading, setLoading] = useState(true);
+  
+  const [deleting, setDeleting] = useState(false);
+
+  const loadBudgets = useCallback(async () => {
+    if (!currentAccountId) {
+      setBudgets([]);
+      setSelectedBudget(null);
+      setCategorySummaries([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      console.log('[BudgetDashboard] Loading budgets for account:', currentAccountId);
+
+      const allBudgets = await getAllBudgets(currentAccountId);
+      
+      console.log('[BudgetDashboard] Loaded budgets:', allBudgets.length);
+      
+      // Ensure all budgets have required fields with defaults
+      const normalizedBudgets = allBudgets.map(budget => ({
+        ...budget,
+        name: budget.name || 'My Budget',
+        period: budget.period || 'monthly' as const,
+      }));
+      
+      console.log('[BudgetDashboard] Normalized budgets:', normalizedBudgets.map(b => ({ 
+        id: b.id.slice(0, 8), 
+        name: b.name, 
+        period: b.period, 
+        month: b.month 
+      })));
+      
+      setBudgets(normalizedBudgets);
+
+      // Try to select the previously selected budget, or default to first
+      let budgetToShow = normalizedBudgets.find(b => b.id === selectedBudgetId);
+      
+      if (!budgetToShow && normalizedBudgets.length > 0) {
+        budgetToShow = normalizedBudgets[0];
+      }
+      
+      console.log('[BudgetDashboard] Selected budget:', budgetToShow ? {
+        id: budgetToShow.id.slice(0, 8),
+        name: budgetToShow.name,
+        period: budgetToShow.period,
+        month: budgetToShow.month
+      } : 'none');
+      
+      setSelectedBudget(budgetToShow || null);
+      
+      // Save the selected budget to store
+      if (budgetToShow) {
+        await setSelectedBudgetId(budgetToShow.id);
+      }
+
+      if (!budgetToShow) {
+        setCategorySummaries([]);
+        return;
+      }
+
+      const categoryData = await getBudgetCategories(budgetToShow.id);
+      
+      console.log('[BudgetDashboard] Budget categories:', categoryData.map(c => ({ 
+        category: c.category, 
+        amount: c.amount 
+      })));
+
+      const transactions = await getTransactions(currentAccountId);
+      
+      console.log('[BudgetDashboard] Total transactions:', transactions.length);
+      console.log('[BudgetDashboard] Calculating summaries for period:', budgetToShow.month);
+
+      const summaries = calculateBudgetCategorySummaries(
+        categoryData,
+        transactions,
+        budgetToShow.month,
+      );
+
+      console.log('[BudgetDashboard] Summaries calculated:', summaries.length);
+
+      setCategories(categoryData);
+      setCategorySummaries(summaries);
+    } catch (error) {
+      console.error("FAILED TO LOAD BUDGETS:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentAccountId, selectedBudgetId, setSelectedBudgetId]);
 
   useFocusEffect(
     useCallback(() => {
-      async function loadBudget() {
-        if (!currentAccountId) {
-          setBudget(null);
-          setCategorySummaries([]);
-          setLoading(false);
-          return;
-        }
-
-        try {
-          setLoading(true);
-
-          const month = new Date().toISOString().slice(0, 7);
-
-          const budgetData = await getBudget(currentAccountId, month);
-
-          if (!budgetData) {
-            setBudget(null);
-            setCategorySummaries([]);
-            return;
-          }
-
-          const categoryData = await getBudgetCategories(budgetData.id);
-
-          const transactions = await getTransactions(currentAccountId);
-
-          const summaries = calculateBudgetCategorySummaries(
-            categoryData,
-            transactions,
-            month,
-          );
-
-          setBudget(budgetData);
-          setCategorySummaries(summaries);
-        } catch (error) {
-          console.error("FAILED TO LOAD BUDGET:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
-
-      loadBudget();
-    }, [currentAccountId]),
+      loadBudgets();
+    }, [loadBudgets]),
   );
+
+  const handleSelectBudget = async (budget: Budget) => {
+    setSelectedBudget(budget);
+    
+    // Save to store so dashboard can use it
+    await setSelectedBudgetId(budget.id);
+    
+    try {
+      const categoryData = await getBudgetCategories(budget.id);
+      const transactions = await getTransactions(currentAccountId!);
+      const summaries = calculateBudgetCategorySummaries(
+        categoryData,
+        transactions,
+        budget.month,
+      );
+
+      setCategories(categoryData);
+      setCategorySummaries(summaries);
+    } catch (error) {
+      console.error("FAILED TO LOAD BUDGET DETAILS:", error);
+    }
+  };
+
+  const handleDeleteBudget = async () => {
+    if (!selectedBudget) return;
+
+    const confirmDelete = () => {
+      return new Promise<boolean>((resolve) => {
+        if (Platform.OS === "web") {
+          const confirmed = window.confirm(
+            "Delete this budget?\n\nThis will permanently delete this budget and all its categories. This action cannot be undone."
+          );
+          resolve(confirmed);
+        } else {
+          Alert.alert(
+            "Delete Budget?",
+            "This will permanently delete this budget and all its categories. This action cannot be undone.",
+            [
+              { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+              { 
+                text: "Delete", 
+                style: "destructive", 
+                onPress: () => resolve(true) 
+              },
+            ]
+          );
+        }
+      });
+    };
+
+    const confirmed = await confirmDelete();
+    
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await deleteBudget(selectedBudget.id);
+      
+      // Refresh the screen
+      await loadBudgets();
+      
+      if (Platform.OS !== "web") {
+        Alert.alert("Success", "Budget deleted successfully");
+      }
+    } catch (error) {
+      console.error("FAILED TO DELETE BUDGET:", error);
+      
+      if (Platform.OS === "web") {
+        window.alert("Failed to delete budget. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to delete budget. Please try again.");
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -253,14 +387,14 @@ export function BudgetDashboardScreen() {
               maxWidth: 280,
             }}
           >
-            You have not selected any account yet. Select an account to view your budget.
+            You have not selected any account yet. Select an account to view your budgets.
           </Text>
         </View>
       </View>
     );
   }
 
-  if (!budget) {
+  if (budgets.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: "#FEFDFB" }}>
         <View
@@ -405,7 +539,7 @@ export function BudgetDashboardScreen() {
               letterSpacing: -0.3,
             }}
           >
-            No budget yet
+            No budgets yet
           </Text>
           <Text
             style={{
@@ -417,7 +551,7 @@ export function BudgetDashboardScreen() {
               marginBottom: 48,
             }}
           >
-            You have not created any budget yet. Create a monthly budget to start tracking your spending.
+            You have not created any budgets yet. Create your first budget to start tracking your spending.
           </Text>
 
           {/* CTA Button */}
@@ -451,6 +585,10 @@ export function BudgetDashboardScreen() {
     );
   }
 
+  if (!selectedBudget) {
+    return null;
+  }
+
   const totalSpent = categorySummaries.reduce(
     (total, category) => total + category.spent,
     0,
@@ -462,9 +600,22 @@ export function BudgetDashboardScreen() {
   );
 
   const overallPercentage =
-    budget && budget.totalBudget > 0
-      ? (totalSpent / budget.totalBudget) * 100
+    selectedBudget && selectedBudget.totalBudget > 0
+      ? (totalSpent / selectedBudget.totalBudget) * 100
       : 0;
+
+  // Check budget health and trigger notifications if needed
+  if (currentAccountId && selectedBudget) {
+    checkBudgetHealth({
+      accountId: currentAccountId,
+      budgetId: selectedBudget.id,
+      budgetName: selectedBudget.name,
+      totalSpent,
+      totalBudget: selectedBudget.totalBudget,
+    }).catch((error) => {
+      console.error("Failed to check budget health:", error);
+    });
+  }
 
   const overallStatus =
     overallPercentage >= 100
@@ -485,17 +636,110 @@ export function BudgetDashboardScreen() {
       style={screenStyles.root}
       contentContainerStyle={screenStyles.scrollContent}
     >
-      <View>
-        <Text style={screenStyles.title}>Budget</Text>
-
-        <Text style={screenStyles.subtitle}>Your plan for this month.</Text>
+      {/* Header with Actions */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={screenStyles.title}>Budgets</Text>
+          <Text style={screenStyles.subtitle}>Manage your spending plans</Text>
+        </View>
+        
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable
+            onPress={() => router.push("/budget-report")}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: colors.secondary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
+          </Pressable>
+          
+          <Pressable
+            onPress={() => router.push("/budget/create")}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: colors.secondary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="add" size={24} color={colors.primary} />
+          </Pressable>
+          
+          <Pressable
+            onPress={handleDeleteBudget}
+            disabled={deleting}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: colors.surface,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: deleting ? 0.5 : 1,
+            }}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={colors.error} />
+            ) : (
+              <Ionicons name="trash-outline" size={20} color={colors.error} />
+            )}
+          </Pressable>
+        </View>
       </View>
+
+      {/* Budget Selector */}
+      {budgets.length > 1 && (
+        <View style={{ marginBottom: 20 }}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {budgets.map((budget) => (
+              <Pressable
+                key={budget.id}
+                onPress={() => handleSelectBudget(budget)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 20,
+                  borderWidth: 2,
+                  borderColor: selectedBudget?.id === budget.id ? colors.secondary : colors.borderInput,
+                  backgroundColor: selectedBudget?.id === budget.id ? `${colors.secondary}10` : colors.surface,
+                }}
+              >
+                <Text style={{ 
+                  fontWeight: selectedBudget?.id === budget.id ? '600' : '400',
+                  color: selectedBudget?.id === budget.id ? colors.secondary : colors.text,
+                  fontSize: 14,
+                }}>
+                  {budget.name}
+                </Text>
+                <Text style={{ 
+                  fontSize: 11, 
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                }}>
+                  {budget.period ? budget.period.charAt(0).toUpperCase() + budget.period.slice(1) : 'Monthly'}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Overall Health Card */}
       <View style={styles.healthCard}>
         {/* Gradient Background */}
         <LinearGradient
-          colors={['#EA580C', '#DC2626']} // Orange to Red gradient
+          colors={['#B8F34A', '#9DD635']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.healthCardGradient}
@@ -505,14 +749,13 @@ export function BudgetDashboardScreen() {
         <View style={styles.healthCardContent}>
           {/* Header with Status Badge */}
           <View style={styles.healthCardHeader}>
-            <Text style={styles.healthCardTitle}>Monthly Budget</Text>
+            <Text style={styles.healthCardTitle}>{selectedBudget.name}</Text>
             <View style={[
               styles.statusBadge,
-              { backgroundColor: overallStatus === "healthy" ? "#FFFFFF" : "rgba(255,255,255,0.9)" }
+              { backgroundColor: colors.secondary }
             ]}>
               <Text style={[styles.statusBadgeText, { 
-                color: overallStatus === "exceeded" ? colors.error : 
-                       overallStatus === "warning" ? "#D97706" : "#059669" 
+                color: colors.primary
               }]}>
                 {overallStatus === "healthy" ? "On Track" : 
                  overallStatus === "warning" ? "Watch Out" : "Over Budget"}
@@ -523,14 +766,14 @@ export function BudgetDashboardScreen() {
           {/* Amount Display */}
           <View style={styles.amountSection}>
             <Text style={styles.amountLabel}>
-              ₦{totalSpent.toLocaleString()} spent of ₦{budget.totalBudget.toLocaleString()}
+              ₦{totalSpent.toLocaleString()} spent of ₦{selectedBudget.totalBudget.toLocaleString()}
             </Text>
           </View>
 
           {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
             <LinearGradient
-              colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.6)']} // White gradient blend
+              colors={['rgba(17, 17, 17, 0.9)', 'rgba(17, 17, 17, 0.6)']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBarFill, {
@@ -557,86 +800,75 @@ export function BudgetDashboardScreen() {
       {/* Summary */}
 
       <View style={screenStyles.card}>
-        <Text style={{ color: colors.textSecondary }}>Total Budget</Text>
+        <Text style={{ color: colors.textMuted }}>Total Budget</Text>
 
         <Text
           style={{
             marginTop: 6,
             fontSize: 28,
             fontWeight: "700",
-            color: colors.text,
+            color: colors.secondary,
           }}
         >
-          ₦{budget.totalBudget.toLocaleString()}
+          ₦{selectedBudget.totalBudget.toLocaleString()}
         </Text>
 
         <Text
           style={{
             marginTop: 8,
-            color: colors.textSecondary,
+            color: colors.textMuted,
           }}
         >
-          Monthly income: ₦{budget.totalIncome.toLocaleString()}
+          {selectedBudget.period ? (selectedBudget.period.charAt(0).toUpperCase() + selectedBudget.period.slice(1)) : 'Monthly'} income: ₦{selectedBudget.totalIncome.toLocaleString()}
         </Text>
       </View>
 
       {/* Categories */}
-
-      <View style={{ gap: 16 }}>
+      <View style={{ gap: 12 }}>
         <Text style={styles.categoriesTitle}>Your Categories</Text>
 
         {categorySummaries.map((summary) => {
+          const statusColor = 
+            summary.percentage >= 100 ? colors.error :
+            summary.percentage >= 75 ? colors.warning :
+            colors.success;
+
           return (
             <View
               key={summary.categoryId}
               style={styles.categoryCard}
             >
-              {/* Header Row */}
+              {/* Compact Header with all info in one row */}
               <View style={styles.categoryHeader}>
-                <View style={styles.categoryTitleRow}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.categoryName}>
                     {summary.category}
                   </Text>
-                  <Text style={styles.categoryBudgetText}>
-                    Budget: ₦{summary.budgeted.toLocaleString()}
+                  <Text style={styles.categorySubtext}>
+                    ₦{summary.spent.toLocaleString()} / ₦{summary.budgeted.toLocaleString()}
                   </Text>
                 </View>
-              </View>
-
-              {/* Percentage Display */}
-              <Text style={styles.percentageDisplay}>
-                {summary.percentage.toFixed(0)}%
-              </Text>
-
-              {/* Progress Bar with Gradient Fill */}
-              <View style={styles.categoryProgressWrapper}>
-                <View style={styles.categoryProgressTrack}>
-                  <LinearGradient
-                    colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.6)']} // White gradient blend
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.categoryProgressGradient, {
-                      width: `${Math.min(summary.percentage, 100)}%`,
-                    }]}
-                  />
-                </View>
                 
-                {/* Due/Remaining Info */}
-                <View style={styles.remainingBadge}>
-                  <Text style={styles.remainingBadgeText}>
+                <View style={styles.categoryRightSection}>
+                  <View style={[styles.percentageBadge, { backgroundColor: `${statusColor}15` }]}>
+                    <Text style={[styles.percentageBadgeText, { color: statusColor }]}>
+                      {summary.percentage.toFixed(0)}%
+                    </Text>
+                  </View>
+                  <Text style={styles.remainingText}>
                     ₦{Math.abs(summary.remaining).toLocaleString()} left
                   </Text>
                 </View>
               </View>
 
-              {/* Footer Info */}
-              <View style={styles.categoryFooter}>
-                <View style={styles.spentInfo}>
-                  <Text style={styles.spentLabel}>Spent</Text>
-                  <Text style={styles.spentAmount}>
-                    ₦{summary.spent.toLocaleString()}
-                  </Text>
-                </View>
+              {/* Slim Progress Bar */}
+              <View style={styles.categoryProgressTrack}>
+                <View
+                  style={[styles.categoryProgressFill, {
+                    width: `${Math.min(summary.percentage, 100)}%`,
+                    backgroundColor: statusColor,
+                  }]}
+                />
               </View>
             </View>
           );
@@ -653,11 +885,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     minHeight: 230,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 6 },
+    // shadowOpacity: 0.2,
+    // shadowRadius: 16,
+    // elevation: 8,
   },
   healthCardGradient: {
     position: "absolute",
@@ -680,18 +912,18 @@ const styles = StyleSheet.create({
   healthCardTitle: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#111111",
     letterSpacing: -0.5,
   },
   statusBadge: {
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 2,
   },
   statusBadgeText: {
     fontSize: 13,
@@ -705,12 +937,12 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontSize: 15,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.95)",
+    color: "rgba(17, 17, 17, 0.85)",
     lineHeight: 20,
   },
   progressBarContainer: {
     height: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(17, 17, 17, 0.15)",
     borderRadius: 20,
     overflow: "hidden",
     marginBottom: 8,
@@ -722,7 +954,7 @@ const styles = StyleSheet.create({
   percentageText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.85)",
+    color: "rgba(17, 17, 17, 0.75)",
     marginBottom: 18,
   },
   viewBudgetLink: {
@@ -733,7 +965,7 @@ const styles = StyleSheet.create({
   viewBudgetLinkText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "#111111",
     textDecorationLine: "underline",
   },
   coinStack: {
@@ -765,84 +997,55 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   categoryCard: {
-    backgroundColor: colors.secondary, // Dark background
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 6,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
   },
   categoryHeader: {
-    marginBottom: 12,
-  },
-  categoryTitleRow: {
-    marginBottom: 4,
-  },
-  categoryName: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 4,
-    letterSpacing: -0.3,
-  },
-  categoryBudgetText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.7)",
-  },
-  percentageDisplay: {
-    fontSize: 42,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 16,
-    letterSpacing: -1,
-  },
-  categoryProgressWrapper: {
-    marginBottom: 16,
-  },
-  categoryProgressTrack: {
-    height: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  categoryProgressGradient: {
-    height: "100%",
-    borderRadius: 20,
-  },
-  remainingBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  remainingBadgeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  categoryFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  spentInfo: {
-    flex: 1,
+  categoryName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 4,
   },
-  spentLabel: {
+  categorySubtext: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: colors.textSecondary,
+  },
+  categoryRightSection: {
+    alignItems: "flex-end",
+  },
+  percentageBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  percentageBadgeText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  remainingText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.6)",
-    marginBottom: 2,
+    color: colors.textSecondary,
   },
-  spentAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: -0.3,
+  categoryProgressTrack: {
+    height: 8,
+    backgroundColor: colors.borderInput,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  categoryProgressFill: {
+    height: "100%",
+    borderRadius: 4,
   },
 });

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -10,7 +12,12 @@ import {
 
 import { budgetCategories } from "../constants/budgetCategories";
 import { useAccountStore } from "../../../store/account/accountStore";
-import { createBudget, createBudgetCategory } from "../services/budgetService";
+import { 
+  createBudget, 
+  createBudgetCategory, 
+  getBudget,
+  deleteBudget 
+} from "../services/budgetService";
 
 import { router } from "expo-router";
 import { colors, screenStyles } from "../../../theme";
@@ -19,6 +26,8 @@ import { generateId } from "../../../utils/id";
 export function BudgetBuilderScreen() {
   const [step, setStep] = useState(1);
 
+  const [budgetName, setBudgetName] = useState("");
+  const [budgetPeriod, setBudgetPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [monthlyIncome, setMonthlyIncome] = useState("");
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -28,13 +37,28 @@ export function BudgetBuilderScreen() {
   >({});
 
   const [saving, setSaving] = useState(false);
+  
+  const [checkingExisting, setCheckingExisting] = useState(false);
+  
+  const [existingBudgetId, setExistingBudgetId] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
 
+  // No longer checking for existing budget - allow multiple budgets
+  useEffect(() => {
+    setCheckingExisting(false);
+  }, [currentAccountId]);
+
   const nextStep = () => {
     if (step === 1) {
+      if (!budgetName.trim()) {
+        return;
+      }
+    }
+
+    if (step === 2) {
       const income = Number(monthlyIncome);
 
       if (!income || income <= 0) {
@@ -42,13 +66,13 @@ export function BudgetBuilderScreen() {
       }
     }
 
-    if (step === 2) {
+    if (step === 3) {
       if (selectedCategories.length === 0) {
         return;
       }
     }
 
-    if (step === 3) {
+    if (step === 4) {
       const hasInvalidAmount = selectedCategories.some((category) => {
         const amount = Number(categoryAmounts[category]);
 
@@ -60,7 +84,7 @@ export function BudgetBuilderScreen() {
       }
     }
 
-    setStep((currentStep) => Math.min(currentStep + 1, 5));
+    setStep((currentStep) => Math.min(currentStep + 1, 6));
   };
 
   const previousStep = () => {
@@ -96,16 +120,43 @@ export function BudgetBuilderScreen() {
       setSaving(true);
       setError(null);
 
+      // Delete existing budget if replacing (existingBudgetId would be set from edit flow)
+      if (existingBudgetId) {
+        await deleteBudget(existingBudgetId);
+      }
+
       const now = new Date().toISOString();
 
-      const month = new Date().toISOString().slice(0, 7);
+      // Generate month/period identifier based on period type
+      let monthIdentifier: string;
+      const currentDate = new Date();
+      
+      switch (budgetPeriod) {
+        case 'daily':
+          monthIdentifier = currentDate.toISOString().slice(0, 10); // "2026-10-08"
+          break;
+        case 'weekly':
+          // Get week number
+          const weekNumber = getWeekNumber(currentDate);
+          monthIdentifier = `${currentDate.getFullYear()}-W${weekNumber}`;
+          break;
+        case 'yearly':
+          monthIdentifier = currentDate.getFullYear().toString(); // "2026"
+          break;
+        case 'monthly':
+        default:
+          monthIdentifier = currentDate.toISOString().slice(0, 7); // "2026-10"
+          break;
+      }
 
       const budgetId = generateId();
 
       const budget = {
         id: budgetId,
         accountId: currentAccountId,
-        month,
+        name: budgetName.trim(),
+        period: budgetPeriod,
+        month: monthIdentifier,
         totalIncome: income,
         totalBudget: totalBudgeted,
         createdAt: now,
@@ -129,7 +180,7 @@ export function BudgetBuilderScreen() {
 
       console.log("BUDGET CREATED:", budget);
 
-      setStep(5);
+      setStep(6);
 
       setTimeout(() => {
         router.replace("/(tabs)/budget");
@@ -143,6 +194,25 @@ export function BudgetBuilderScreen() {
     }
   };
 
+  // Helper function to get week number
+  function getWeekNumber(date: Date): number {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  }
+
+  // Show loading while checking for existing budget
+  if (checkingExisting) {
+    return (
+      <View style={[screenStyles.root, screenStyles.centered]}>
+        <ActivityIndicator color={colors.secondary} />
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          Checking existing budget...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={screenStyles.root}
@@ -153,7 +223,7 @@ export function BudgetBuilderScreen() {
       <View>
         <Text style={screenStyles.title}>Build Your Budget</Text>
 
-        <Text style={screenStyles.subtitle}>Step {step} of 5</Text>
+        <Text style={screenStyles.subtitle}>Step {step} of 6</Text>
       </View>
 
       {/* Progress */}
@@ -168,23 +238,91 @@ export function BudgetBuilderScreen() {
       >
         <View
           style={{
-            width: `${(step / 5) * 100}%`,
+            width: `${(step / 6) * 100}%`,
             height: "100%",
             backgroundColor: colors.primary,
           }}
         />
       </View>
 
-      {/* STEP 1 */}
+      {/* STEP 1: Budget Name and Period */}
 
       {step === 1 && (
         <View style={{ gap: 16 }}>
           <Text style={screenStyles.sectionTitle}>
-            What's your monthly income?
+            Name your budget
           </Text>
 
           <Text style={{ color: colors.textSecondary }}>
-            Enter the amount you expect to earn this month.
+            Give your budget a descriptive name.
+          </Text>
+
+          <TextInput
+            value={budgetName}
+            onChangeText={setBudgetName}
+            placeholder="e.g. Monthly Expenses, Weekly Groceries"
+            style={[screenStyles.input, { fontSize: 16 }]}
+          />
+
+          <Text style={[screenStyles.sectionTitle, { marginTop: 16 }]}>
+            Budget period
+          </Text>
+
+          <Text style={{ color: colors.textSecondary }}>
+            How often does this budget reset?
+          </Text>
+
+          <View style={{ gap: 12 }}>
+            {[
+              { value: 'daily' as const, label: 'Daily', desc: 'Resets every day' },
+              { value: 'weekly' as const, label: 'Weekly', desc: 'Resets every week' },
+              { value: 'monthly' as const, label: 'Monthly', desc: 'Resets every month' },
+              { value: 'yearly' as const, label: 'Yearly', desc: 'Resets every year' },
+            ].map((option) => (
+              <Pressable
+                key={option.value}
+                onPress={() => setBudgetPeriod(option.value)}
+                style={[
+                  {
+                    padding: 16,
+                    borderRadius: 12,
+                    borderWidth: 2,
+                    borderColor: budgetPeriod === option.value ? colors.secondary : colors.borderInput,
+                    backgroundColor: budgetPeriod === option.value ? `${colors.secondary}10` : colors.surface,
+                  }
+                ]}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+                      {option.label}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 2 }}>
+                      {option.desc}
+                    </Text>
+                  </View>
+                  {budgetPeriod === option.value && (
+                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: colors.primary, fontSize: 16, fontWeight: '700' }}>✓</Text>
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* STEP 2: Income */}
+
+      {step === 2 && (
+        <View style={{ gap: 16 }}>
+          <Text style={screenStyles.sectionTitle}>
+            What's your {budgetPeriod} income?
+          </Text>
+
+          <Text style={{ color: colors.textSecondary }}>
+            Enter the amount you expect to earn for this {budgetPeriod} period.
           </Text>
 
           <TextInput
@@ -197,9 +335,9 @@ export function BudgetBuilderScreen() {
         </View>
       )}
 
-      {/* STEP 2 */}
+      {/* STEP 3: Categories */}
 
-      {step === 2 && (
+      {step === 3 && (
         <View style={{ gap: 16 }}>
           <Text style={screenStyles.sectionTitle}>
             What do you spend money on?
@@ -235,16 +373,16 @@ export function BudgetBuilderScreen() {
         </View>
       )}
 
-      {/* STEP 3 */}
+      {/* STEP 4: Category Amounts */}
 
-      {step === 3 && (
+      {step === 4 && (
         <View style={{ gap: 16 }}>
           <Text style={screenStyles.sectionTitle}>
             Set your category budgets
           </Text>
 
           <Text style={{ color: colors.textSecondary }}>
-            Decide how much you want to spend in each category this month.
+            Decide how much you want to spend in each category for this {budgetPeriod} period.
           </Text>
 
           {selectedCategories.length === 0 ? (
@@ -278,9 +416,9 @@ export function BudgetBuilderScreen() {
         </View>
       )}
 
-      {/* STEP 4 */}
+      {/* STEP 5: Review */}
 
-      {step === 4 && (
+      {step === 5 && (
         <View style={{ gap: 20 }}>
           <View>
             <Text style={screenStyles.sectionTitle}>
@@ -288,14 +426,32 @@ export function BudgetBuilderScreen() {
             </Text>
 
             <Text style={screenStyles.subtitle}>
-              Here's how your money is planned for this month.
+              Here's how your money is planned for this {budgetPeriod} period.
+            </Text>
+          </View>
+
+          {/* Budget Info */}
+          <View style={screenStyles.card}>
+            <Text style={{ color: colors.textSecondary }}>Budget Name</Text>
+            <Text
+              style={{
+                marginTop: 6,
+                fontSize: 18,
+                fontWeight: '600',
+                color: colors.text,
+              }}
+            >
+              {budgetName}
+            </Text>
+            <Text style={{ marginTop: 8, color: colors.textSecondary }}>
+              Period: {budgetPeriod.charAt(0).toUpperCase() + budgetPeriod.slice(1)}
             </Text>
           </View>
 
           {/* Income */}
 
           <View style={screenStyles.card}>
-            <Text style={{ color: colors.textSecondary }}>Monthly Income</Text>
+            <Text style={{ color: colors.textSecondary }}>{budgetPeriod.charAt(0).toUpperCase() + budgetPeriod.slice(1)} Income</Text>
 
             <Text
               style={{
@@ -393,15 +549,15 @@ export function BudgetBuilderScreen() {
                 fontWeight: "600",
               }}
             >
-              ⚠️ Your planned budget is higher than your monthly income.
+              ⚠️ Your planned budget is higher than your {budgetPeriod} income.
             </Text>
           )}
         </View>
       )}
 
-      {/* STEP 5 */}
+      {/* STEP 6: Success */}
 
-      {step === 5 && (
+      {step === 6 && (
         <View style={{ gap: 12 }}>
           <Text style={screenStyles.sectionTitle}>
             Your budget is ready 🎉
@@ -412,8 +568,6 @@ export function BudgetBuilderScreen() {
           </Text>
         </View>
       )}
-
-      {/* Navigation */}
 
       {error && (
         <Text
@@ -445,9 +599,9 @@ export function BudgetBuilderScreen() {
           <View style={{ flex: 1 }} />
         )}
 
-        {step < 5 && (
+        {step < 6 && (
           <Pressable
-            onPress={step === 4 ? handleCreateBudget : nextStep}
+            onPress={step === 5 ? handleCreateBudget : nextStep}
             disabled={saving}
             style={[
               screenStyles.primaryButton,
@@ -458,7 +612,7 @@ export function BudgetBuilderScreen() {
               <ActivityIndicator color={colors.primary} />
             ) : (
               <Text style={screenStyles.primaryButtonText}>
-                {step === 4 ? "Create Budget" : "Continue"}
+                {step === 5 ? "Create Budget" : "Continue"}
               </Text>
             )}
           </Pressable>

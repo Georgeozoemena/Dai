@@ -21,15 +21,62 @@ export function calculateBudgetCategorySummaries(
   transactions: Transaction[],
   month: string,
 ): BudgetCategorySummary[] {
+  console.log('[BudgetCalculation] ====== CALCULATION START ======');
+  console.log('[BudgetCalculation] Period identifier:', month);
+  console.log('[BudgetCalculation] Categories count:', categories.length);
+  console.log('[BudgetCalculation] Transactions count:', transactions.length);
+  
+  // Debug: Show sample transaction dates
+  if (transactions.length > 0) {
+    console.log('[BudgetCalculation] Sample transaction dates:', 
+      transactions.slice(0, 3).map(t => ({ date: t.date, type: t.type, category: t.category, amount: t.amount }))
+    );
+  }
+  
   return categories.map((category) => {
+    console.log(`[BudgetCalculation] Processing category: ${category.category}`);
+    
     const spent = transactions
       .filter((transaction) => {
-        return (
-          transaction.type === "expense" &&
-          transaction.category ===
-            category.category &&
-          transaction.date.slice(0, 7) === month
-        );
+        if (transaction.type !== "expense") {
+          return false;
+        }
+        if (transaction.category !== category.category) {
+          return false;
+        }
+        
+        // Match transactions based on budget period format
+        const txDate = transaction.date;
+        let matches = false;
+        
+        // Monthly format: "2024-10"
+        if (month.match(/^\d{4}-\d{2}$/)) {
+          matches = txDate.slice(0, 7) === month;
+          console.log(`[BudgetCalculation]   Monthly check: ${txDate.slice(0, 7)} === ${month} ? ${matches}`);
+        }
+        // Daily format: "2024-10-09"
+        else if (month.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          matches = txDate.slice(0, 10) === month;
+          console.log(`[BudgetCalculation]   Daily check: ${txDate.slice(0, 10)} === ${month} ? ${matches}`);
+        }
+        // Weekly format: "2024-W42"
+        else if (month.match(/^\d{4}-W\d+$/)) {
+          const txWeek = getWeekIdentifier(new Date(txDate));
+          matches = txWeek === month;
+          console.log(`[BudgetCalculation]   Weekly check: ${txWeek} === ${month} ? ${matches}`);
+        }
+        // Yearly format: "2024"
+        else if (month.match(/^\d{4}$/)) {
+          matches = txDate.slice(0, 4) === month;
+          console.log(`[BudgetCalculation]   Yearly check: ${txDate.slice(0, 4)} === ${month} ? ${matches}`);
+        }
+        // Fallback to monthly comparison
+        else {
+          matches = txDate.slice(0, 7) === month;
+          console.log(`[BudgetCalculation]   Fallback monthly check: ${txDate.slice(0, 7)} === ${month} ? ${matches}`);
+        }
+        
+        return matches;
       })
       .reduce(
         (total, transaction) =>
@@ -56,6 +103,8 @@ export function calculateBudgetCategorySummaries(
       status = "warning";
     }
 
+    console.log(`[BudgetCalculation] ${category.category}: Budgeted=${category.amount}, Spent=${spent}, Remaining=${remaining}, ${percentage.toFixed(1)}%`);
+
     return {
       categoryId: category.id,
       category: category.category,
@@ -66,4 +115,14 @@ export function calculateBudgetCategorySummaries(
       status,
     };
   });
+}
+
+/**
+ * Get week identifier for a date (e.g., "2024-W42")
+ */
+function getWeekIdentifier(date: Date): string {
+  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+  const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  return `${date.getFullYear()}-W${weekNumber}`;
 }

@@ -12,9 +12,9 @@ export function calculateExpenses(transactions: Transaction[]) {
     .reduce((total, transaction) => total + transaction.amount, 0);
 }
 
-export function calculateBalance(transactions: Transaction[]) {
+export function calculateBalance(transactions: Transaction[], initialBalance: number = 0) {
   const income = calculateIncome(transactions);
   const expenses = calculateExpenses(transactions);
 
-  return income - expenses;
+  return initialBalance + income - expenses;
 }

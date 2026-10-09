@@ -46,6 +46,11 @@ export function IncomeScreen() {
   );
   const [pendingIncomes, setPendingIncomes] = useState<PendingIncome[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    amount?: string;
+    category?: string;
+    account?: string;
+  }>({});
 
   useEffect(() => {
     async function loadAccounts() {
@@ -163,28 +168,27 @@ export function IncomeScreen() {
   };
 
   const validateCurrentIncome = () => {
+    const newErrors: typeof errors = {};
+    
     if (!amount) {
-      return "Please enter an amount.";
-    }
-
-    const numericAmount = Number(amount);
-
-    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
-      return "Amount must be greater than 0.";
+      newErrors.amount = "Amount is required";
+    } else {
+      const numericAmount = Number(amount);
+      if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+        newErrors.amount = "Amount must be greater than 0";
+      }
     }
 
     if (!category.trim()) {
-      return "Please enter an income category.";
+      newErrors.category = "Category is required";
     }
 
-    return null;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleAddAnotherIncome = () => {
-    const error = validateCurrentIncome();
-
-    if (error) {
-      console.log("VALIDATION ERROR:", error);
+    if (!validateCurrentIncome()) {
       return;
     }
 
@@ -201,6 +205,7 @@ export function IncomeScreen() {
     setAmount("");
     setCategory("");
     setDescription("");
+    setErrors({});
 
     console.log("INCOME ADDED TO LIST:", newIncome);
   };
@@ -246,7 +251,7 @@ export function IncomeScreen() {
 
   const handleSubmit = async () => {
     if (!currentAccountId) {
-      console.log("VALIDATION ERROR: Please select an account.");
+      setErrors({ account: "Please select an account" });
       return;
     }
 
@@ -256,10 +261,7 @@ export function IncomeScreen() {
     const hasCurrentIncome = amount || category || description;
 
     if (hasCurrentIncome) {
-      const error = validateCurrentIncome();
-
-      if (error) {
-        console.log("VALIDATION ERROR:", error);
+      if (!validateCurrentIncome()) {
         return;
       }
 
@@ -273,7 +275,7 @@ export function IncomeScreen() {
 
     // Nothing to save
     if (incomesToSave.length === 0) {
-      console.log("VALIDATION ERROR: Please add an income.");
+      setErrors({ amount: "Please add at least one income" });
       return;
     }
 
@@ -308,7 +310,7 @@ export function IncomeScreen() {
             screenStyles.input,
             {
               marginTop: 4,
-              borderColor: currentAccountId ? colors.borderInput : colors.error,
+              borderColor: errors.account ? colors.error : (currentAccountId ? colors.borderInput : colors.error),
             },
           ]}
         >
@@ -324,15 +326,33 @@ export function IncomeScreen() {
               : "Tap to select account"}
           </Text>
         </TouchableOpacity>
+        
+        {errors.account && (
+          <Text style={{ color: colors.error, fontSize: 13, marginTop: 4 }}>
+            {errors.account}
+          </Text>
+        )}
       </View>
 
       {/* Amount */}
 
-      <AmountInput
-        currencySymbol={currencySymbol}
-        value={amount}
-        onChange={setAmount}
-      />
+      <View>
+        <AmountInput
+          currencySymbol={currencySymbol}
+          value={amount}
+          onChange={(value) => {
+            setAmount(value);
+            if (errors.amount) {
+              setErrors({ ...errors, amount: undefined });
+            }
+          }}
+        />
+        {errors.amount && (
+          <Text style={{ color: colors.error, fontSize: 13, marginTop: 4 }}>
+            {errors.amount}
+          </Text>
+        )}
+      </View>
 
       {/* Category */}
 
@@ -341,10 +361,23 @@ export function IncomeScreen() {
 
         <TextInput
           value={category}
-          onChangeText={setCategory}
+          onChangeText={(value) => {
+            setCategory(value);
+            if (errors.category) {
+              setErrors({ ...errors, category: undefined });
+            }
+          }}
           placeholder="Salary, freelance, gift..."
-          style={screenStyles.input}
+          style={[
+            screenStyles.input,
+            errors.category && { borderColor: colors.error }
+          ]}
         />
+        {errors.category && (
+          <Text style={{ color: colors.error, fontSize: 13 }}>
+            {errors.category}
+          </Text>
+        )}
       </View>
 
       {/* Description */}

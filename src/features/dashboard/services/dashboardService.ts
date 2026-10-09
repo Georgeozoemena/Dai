@@ -8,6 +8,7 @@ import {
 
 export function calculateDashboardSummary(
   transactions: Transaction[],
+  initialBalance: number = 0,
 ) {
   const income = calculateIncome(
     transactions,
@@ -19,6 +20,7 @@ export function calculateDashboardSummary(
 
   const balance = calculateBalance(
     transactions,
+    initialBalance,
   );
 
   return {

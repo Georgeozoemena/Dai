@@ -5,7 +5,7 @@ import type {
   FinanceCoachResponse,
 } from "../types";
 
-import { getStoredAuth } from "../../auth/services/authStorage";
+import { authClient } from "../../auth/lib/authClient";
 
 const API_URL =
   Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL ||
@@ -115,15 +115,6 @@ class BackendFinanceCoachProvider implements FinanceCoachProvider {
   async generateAdvice(
     context: FinanceCoachContext,
   ): Promise<FinanceCoachResponse> {
-    const auth = await getStoredAuth();
-
-    if (!auth?.token) {
-      throw new FinanceCoachError(
-        "server",
-        "Sign in to use Dai Coach.",
-      );
-    }
-
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
@@ -133,19 +124,11 @@ class BackendFinanceCoachProvider implements FinanceCoachProvider {
     let response: Response;
 
     console.log("🔍 DEBUG: Calling API:", `${API_URL}/api/coach/advice`);
-    console.log("🔍 DEBUG: Has token:", !!auth.token);
     console.log("🔍 DEBUG: Context:", JSON.stringify(context).substring(0, 200));
 
     try {
-      response = await fetch(`${API_URL}/api/coach/advice`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify({ context }),
-        signal: controller.signal,
-      });
+      // Use authClient for automatic token handling and 401 refresh
+      response = await authClient.post('/coach/advice', { context });
       
       console.log("🔍 DEBUG: Response status:", response.status);
       console.log("🔍 DEBUG: Response ok:", response.ok);

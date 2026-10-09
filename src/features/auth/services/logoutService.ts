@@ -1,7 +1,10 @@
-import { clearStoredAuth } from "./authStorage";
 import { useAuthStore } from "../../../store/auth/authStore";
 import { trackLogoutAndFlush } from "../../../services/analytics/analyticsService";
 
+/**
+ * Logout user - clears tokens, unregisters device, and clears store
+ * Now uses new auth system with Keychain and device management
+ */
 export async function logoutUser() {
   console.log("🔓 LOGOUT STARTED");
   
@@ -10,13 +13,9 @@ export async function logoutUser() {
     // token is still valid.
     await trackLogoutAndFlush();
 
-    // Remove saved authentication
-    await clearStoredAuth();
-    console.log("✅ Storage cleared");
-
-    // Clear authentication from memory
-    useAuthStore.getState().clearAuth();
-    console.log("✅ Auth store cleared");
+    // Clear authentication from store (this now clears Keychain + device)
+    await useAuthStore.getState().clearAuth();
+    console.log("✅ Auth cleared (Keychain + Device)");
 
     console.log("🔓 USER LOGGED OUT SUCCESSFULLY");
   } catch (error) {

@@ -9,6 +9,7 @@ export interface Transaction {
   description?: string;
   note?: string;
   date: string;
+  savingsGoalId?: string;
   createdAt: string;
   updatedAt: string;
 }

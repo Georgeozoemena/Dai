@@ -588,6 +588,8 @@ export function DaiCoachScreen() {
                             { 
                               backgroundColor: overview.expensesTotal > overview.incomeTotal 
                                 ? colors.error
+                                : overview.expensesTotal >= overview.incomeTotal * 0.75
+                                ? colors.warning
                                 : net > overview.incomeTotal * 0.2
                                 ? colors.success
                                 : colors.primary
@@ -596,6 +598,8 @@ export function DaiCoachScreen() {
                           <Text style={styles.statusBadgeText}>
                             {overview.expensesTotal > overview.incomeTotal 
                               ? "Overspending"
+                              : overview.expensesTotal >= overview.incomeTotal * 0.75
+                              ? "Warning"
                               : net > overview.incomeTotal * 0.2
                               ? "Excellent"
                               : "Good Progress"
@@ -605,11 +609,18 @@ export function DaiCoachScreen() {
                         <Text style={styles.cardMainTitle}>
                           {overview.expensesTotal > overview.incomeTotal 
                             ? "Budget Alert"
+                            : overview.expensesTotal >= overview.incomeTotal * 0.75
+                            ? "Net Income (Warning)"
                             : net > overview.incomeTotal * 0.2
                             ? "Strong Savings"
                             : "On Track"
                           }
                         </Text>
+                        {overview.expensesTotal >= overview.incomeTotal * 0.75 && overview.expensesTotal <= overview.incomeTotal && (
+                          <Text style={{ fontSize: 14, color: colors.warning, marginTop: 4 }}>
+                            You're {formatCurrency(net, currencyCode)} in the positive this month: income of {formatCurrency(overview.incomeTotal, currencyCode)} against {formatCurrency(overview.expensesTotal, currencyCode)} of spending.
+                          </Text>
+                        )}
                       </View>
                       <View style={styles.savingsRateBox}>
                         <Text style={styles.savingsRateNumber}>

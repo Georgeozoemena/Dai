@@ -24,6 +24,24 @@ export const budgetRepository: BudgetRepository = {
     );
   },
 
+  async getAllBudgets(accountId) {
+    const db = await getDatabase();
+    const budgets = await db.getAll(BUDGET_STORE);
+
+    return budgets
+      .filter((budget: Budget) => budget.accountId === accountId)
+      .sort((a: Budget, b: Budget) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  },
+
+  async getBudgetById(budgetId) {
+    const db = await getDatabase();
+    const budget = await db.get(BUDGET_STORE, budgetId);
+
+    return (budget as Budget | undefined) ?? null;
+  },
+
   async getBudgetCategories(budgetId) {
     const db = await getDatabase();
     const categories =

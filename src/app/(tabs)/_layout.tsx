@@ -1,8 +1,10 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
+import { View, Text, Image } from "react-native";
 
 import { colors } from "../../theme";
+import { useAuthStore } from "../../store/auth/authStore";
 
 const SECONDARY = colors.secondary;
 const INACTIVE = colors.textMuted;
@@ -26,6 +28,65 @@ function TabIcon({
       size={size}
       color={focused ? SECONDARY : INACTIVE}
     />
+  );
+}
+
+function ProfileAvatar({ focused, size }: { focused: boolean; size: number }) {
+  const user = useAuthStore((state) => state.user);
+  
+  // Get the first letter of email or name
+  const initial = (user?.email?.[0] || user?.name?.[0] || "U").toUpperCase();
+  
+  const avatarSize = size + 2; // Slightly larger than standard icon
+  const fontSize = size * 0.5; // Half the size for the text
+  
+  // If user has an avatar URL (from Google), show the image
+  if (user?.avatar) {
+    return (
+      <View
+        style={{
+          width: avatarSize,
+          height: avatarSize,
+          borderRadius: avatarSize / 2,
+          overflow: "hidden",
+          borderWidth: focused ? 2 : 0,
+          borderColor: SECONDARY,
+        }}
+      >
+        <Image
+          source={{ uri: user.avatar }}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+          resizeMode="cover"
+        />
+      </View>
+    );
+  }
+  
+  // Fallback to initial letter
+  return (
+    <View
+      style={{
+        width: avatarSize,
+        height: avatarSize,
+        borderRadius: avatarSize / 2,
+        backgroundColor: focused ? SECONDARY : INACTIVE,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: "#fff",
+          fontSize: fontSize,
+          fontWeight: "600",
+        }}
+      >
+        {initial}
+      </Text>
+    </View>
   );
 }
 
@@ -60,8 +121,8 @@ export default function TabsLayout() {
             <TabIcon
               focused={focused}
               size={size}
-              activeIcon="home"
-              inactiveIcon="home"
+              activeIcon="apps"
+              inactiveIcon="apps-outline"
             />
           ),
         }}
@@ -77,7 +138,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="wallet"
-              inactiveIcon="wallet"
+              inactiveIcon="wallet-outline"
             />
           ),
         }}
@@ -93,22 +154,7 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="list"
-              inactiveIcon="list"
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="weekly"
-        options={{
-          title: "Weekly",
-          headerShown: false,
-          tabBarIcon: ({ size, focused }) => (
-            <TabIcon
-              focused={focused}
-              size={size}
-              activeIcon="calendar"
-              inactiveIcon="calendar"
+              inactiveIcon="list-outline"
             />
           ),
         }}
@@ -123,8 +169,18 @@ export default function TabsLayout() {
               focused={focused}
               size={size}
               activeIcon="pie-chart"
-              inactiveIcon="pie-chart"
+              inactiveIcon="pie-chart-outline"
             />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          headerShown: false,
+          tabBarIcon: ({ size, focused }) => (
+            <ProfileAvatar focused={focused} size={size} />
           ),
         }}
       />

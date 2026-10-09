@@ -6,6 +6,7 @@ type AccountRow = {
   id: string;
   profile_id: string;
   name: string;
+  initial_balance: number;
   currency_code: string;
   created_at: string;
   updated_at: string;
@@ -16,6 +17,7 @@ function toAccount(row: AccountRow): Account {
     id: row.id,
     profileId: row.profile_id,
     name: row.name,
+    initialBalance: row.initial_balance,
     currencyCode: row.currency_code,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -50,17 +52,19 @@ export const accountRepository: AccountRepository = {
 
     db.runSync(
       `INSERT INTO accounts
-        (id, profile_id, name, currency_code, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)
+        (id, profile_id, name, initial_balance, currency_code, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          profile_id = excluded.profile_id,
          name = excluded.name,
+         initial_balance = excluded.initial_balance,
          currency_code = excluded.currency_code,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at`,
       account.id,
       account.profileId,
       account.name,
+      account.initialBalance,
       account.currencyCode,
       account.createdAt,
       account.updatedAt,
@@ -72,17 +76,19 @@ export const accountRepository: AccountRepository = {
 
     db.runSync(
       `INSERT INTO accounts
-        (id, profile_id, name, currency_code, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)
+        (id, profile_id, name, initial_balance, currency_code, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          profile_id = excluded.profile_id,
          name = excluded.name,
+         initial_balance = excluded.initial_balance,
          currency_code = excluded.currency_code,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at`,
       account.id,
       account.profileId,
       account.name,
+      account.initialBalance,
       account.currencyCode,
       account.createdAt,
       account.updatedAt,

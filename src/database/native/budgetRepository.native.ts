@@ -10,6 +10,8 @@ import { getDatabase } from "../client/database";
 type BudgetRow = {
   id: string;
   account_id: string;
+  name: string;
+  period: string;
   month: string;
   total_income: number;
   total_budget: number;
@@ -30,6 +32,8 @@ function toBudget(row: BudgetRow): Budget {
   return {
     id: row.id,
     accountId: row.account_id,
+    name: row.name,
+    period: row.period as 'daily' | 'weekly' | 'monthly' | 'yearly',
     month: row.month,
     totalIncome: row.total_income,
     totalBudget: row.total_budget,
@@ -69,6 +73,30 @@ export const budgetRepository: BudgetRepository = {
     return row ? toBudget(row) : null;
   },
 
+  async getAllBudgets(accountId: string): Promise<Budget[]> {
+    const db = getDatabase();
+
+    const rows = db.getAllSync<BudgetRow>(
+      `SELECT * FROM budgets
+       WHERE account_id = ?
+       ORDER BY created_at DESC`,
+      accountId,
+    );
+
+    return rows.map(toBudget);
+  },
+
+  async getBudgetById(budgetId: string): Promise<Budget | null> {
+    const db = getDatabase();
+
+    const row = db.getFirstSync<BudgetRow>(
+      `SELECT * FROM budgets WHERE id = ?`,
+      budgetId,
+    );
+
+    return row ? toBudget(row) : null;
+  },
+
   async getBudgetCategories(
     budgetId: string,
   ): Promise<BudgetCategory[]> {
@@ -89,10 +117,12 @@ export const budgetRepository: BudgetRepository = {
 
     db.runSync(
       `INSERT INTO budgets
-        (id, account_id, month, total_income, total_budget, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+        (id, account_id, name, period, month, total_income, total_budget, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          account_id = excluded.account_id,
+         name = excluded.name,
+         period = excluded.period,
          month = excluded.month,
          total_income = excluded.total_income,
          total_budget = excluded.total_budget,
@@ -100,6 +130,8 @@ export const budgetRepository: BudgetRepository = {
          updated_at = excluded.updated_at`,
       budget.id,
       budget.accountId,
+      budget.name,
+      budget.period,
       budget.month,
       budget.totalIncome,
       budget.totalBudget,
@@ -137,10 +169,12 @@ export const budgetRepository: BudgetRepository = {
 
     db.runSync(
       `INSERT INTO budgets
-        (id, account_id, month, total_income, total_budget, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+        (id, account_id, name, period, month, total_income, total_budget, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          account_id = excluded.account_id,
+         name = excluded.name,
+         period = excluded.period,
          month = excluded.month,
          total_income = excluded.total_income,
          total_budget = excluded.total_budget,
@@ -148,6 +182,8 @@ export const budgetRepository: BudgetRepository = {
          updated_at = excluded.updated_at`,
       budget.id,
       budget.accountId,
+      budget.name,
+      budget.period,
       budget.month,
       budget.totalIncome,
       budget.totalBudget,

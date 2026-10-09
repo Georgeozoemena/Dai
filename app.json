@@ -4,9 +4,15 @@
     "slug": "Dai",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/MOVA.jpg",
     "userInterfaceStyle": "light",
     "scheme": "dai",
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#FBCC33",
+      "androidMode": "default",
+      "androidCollapsedTitle": "{{unread_count}} new notifications"
+    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -18,26 +24,35 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/MOVA-white.png",
+        "backgroundImage": "./assets/MOVA-black.png",
+        "monochromeImage": "./assets/MOVA-white.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/MOVA.jpg",
       "bundler": "metro"
     },
     "plugins": [
       "expo-sqlite",
       "expo-secure-store",
       "expo-local-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#FBCC33",
+          "sounds": []
+        }
+      ],
       [
         "expo-sharing",
         {
@@ -63,7 +78,7 @@
       "eas": {
         "projectId": "39f95537-c3b5-44f3-b790-f09203768ffc"
       },
-      "EXPO_PUBLIC_BACKEND_URL": "https://dai-backend.onrender.com",
+      "EXPO_PUBLIC_BACKEND_URL": "http://localhost:5000",
       "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "900527916230-v37hfl119bs0gld3l91berjl6t3veo8a.apps.googleusercontent.com"
     }
   }

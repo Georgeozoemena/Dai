@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, ActivityIndicator, Animated } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View, ActivityIndicator, Animated, Image } from "react-native";
 
 import { setPin as savePin } from "../services/pinService";
 import { confirmPinReset } from "../services/pinRecoveryService";
+import { colors } from "../../../theme";
 
 interface PinRecoveryResetScreenProps {
   userId: string;
@@ -147,14 +148,11 @@ export function PinRecoveryResetScreen({
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape1]} />
-            <View style={[styles.logoShape, styles.shape2]} />
-          </View>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoShape, styles.shape3]} />
-            <View style={[styles.logoShape, styles.shape4]} />
-          </View>
+          <Image
+            source={require('../../../../assets/MOVA.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Title */}
@@ -242,41 +240,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignSelf: "center",
-    gap: 8,
-    marginBottom: 80,
+    marginBottom: 60,
   },
-  logoRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  logoShape: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#120E01",
-  },
-  shape1: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 10,
-    borderBottomLeftRadius: 16,
-  },
-  shape2: {
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 8,
-  },
-  shape3: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 6,
-    borderBottomLeftRadius: 20,
-  },
-  shape4: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 16,
-    borderBottomLeftRadius: 10,
+  logo: {
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 26,
@@ -339,16 +307,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   button: {
-    backgroundColor: "#FBCC33",
+    backgroundColor: colors.secondary,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#FBCC33",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   buttonPressed: {
     transform: [{ scale: 0.98 }],
@@ -360,7 +323,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#120E01",
+    color: colors.primary,
     letterSpacing: 0.2,
   },
 });

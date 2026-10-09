@@ -9,6 +9,14 @@ export interface BudgetRepository {
     month: string,
   ): Promise<Budget | null>;
 
+  getAllBudgets(
+    accountId: string,
+  ): Promise<Budget[]>;
+
+  getBudgetById(
+    budgetId: string,
+  ): Promise<Budget | null>;
+
   getBudgetCategories(
     budgetId: string,
   ): Promise<BudgetCategory[]>;
