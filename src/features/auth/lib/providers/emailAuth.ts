@@ -40,9 +40,9 @@ export class EmailAuthProvider implements IEmailAuthProvider {
       const deviceInfo = await DeviceManager.getDeviceInfo();
 
       // Call backend login endpoint
-      console.log('[EmailAuth] Calling login endpoint:', `${API_URL}/api/auth/email/login`);
+      console.log('[EmailAuth] Calling login endpoint:', `${API_URL}/api/v2/auth/email/login`);
       
-      const response = await fetch(`${API_URL}/api/auth/email/login`, {
+      const response = await fetch(`${API_URL}/api/v2/auth/email/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,9 +143,9 @@ export class EmailAuthProvider implements IEmailAuthProvider {
       const deviceInfo = await DeviceManager.getDeviceInfo();
 
       // Call backend signup endpoint
-      console.log('[EmailAuth] Calling signup endpoint:', `${API_URL}/api/auth/email/signup`);
+      console.log('[EmailAuth] Calling signup endpoint:', `${API_URL}/api/v2/auth/email/signup`);
       
-      const response = await fetch(`${API_URL}/api/auth/email/signup`, {
+      const response = await fetch(`${API_URL}/api/v2/auth/email/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

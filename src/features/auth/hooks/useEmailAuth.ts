@@ -92,8 +92,14 @@ export function useEmailAuth(): UseEmailAuthReturn {
 
       console.log('[EmailAuth] User signed up:', authResult.user.email);
 
-      // Navigate to bootstrap
-      router.replace('/bootstrap');
+      // Navigate to email verification (email needs to be verified before PIN setup)
+      router.replace({
+        pathname: '/auth/email-verify',
+        params: {
+          email: authResult.user.email || email,
+          userId: authResult.user.id,
+        },
+      });
     } catch (err) {
       console.error('[EmailAuth] Signup failed:', err);
       

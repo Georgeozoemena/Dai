@@ -166,10 +166,7 @@ export function PhoneAuthScreen() {
 
               {/* Info Box */}
               <View style={styles.infoBox}>
-                <Ionicons name="information-circle-outline" size={20} color={colors.secondary} />
-                <Text style={styles.infoText}>
-                  We'll send you a text message with a 6-digit verification code. Standard message rates may apply.
-                </Text>
+                <Ionicons name="information-circle-outline" size={20} color={colors.secondary} /><Text style={styles.infoText}>We'll send you a text message with a 6-digit verification code. Standard message rates may apply.</Text>
               </View>
 
               {/* Send Button */}
@@ -216,10 +213,7 @@ export function PhoneAuthScreen() {
 
               {/* Auto-verify Info */}
               <View style={styles.infoBox}>
-                <Ionicons name="sparkles-outline" size={18} color={colors.secondary} />
-                <Text style={styles.infoTextSmall}>
-                  The code will be verified automatically when you enter all 6 digits
-                </Text>
+                <Ionicons name="sparkles-outline" size={18} color={colors.secondary} /><Text style={styles.infoTextSmall}>The code will be verified automatically when you enter all 6 digits</Text>
               </View>
             </>
           )}

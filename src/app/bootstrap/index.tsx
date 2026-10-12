@@ -7,6 +7,7 @@ import { hasPin } from "../../features/auth/services/pinService";
 import { tokenManager } from "../../features/auth/lib/tokens/tokenManager";
 import { DeviceManager } from "../../features/auth/lib/device/deviceManager";
 import { useAuthStore } from "../../store/auth/authStore";
+import { useAccountStore } from "../../store/account/accountStore";
 import { initializeAnalytics } from "../../services/analytics/analyticsService";
 import { colors, screenStyles } from "../../theme";
 
@@ -121,6 +122,43 @@ export default function BootstrapScreen() {
           });
 
           console.log("PROFILE AUTO-CREATED:", profile.id);
+        }
+
+        // 5.5. Auto-create default account if none exists
+        const { getAccounts } = await import("../../features/accounts/services/accountService");
+        const { createAccount } = await import("../../features/accounts/services/accountService");
+        const existingAccounts = await getAccounts(profile.id);
+
+        if (existingAccounts.length === 0) {
+          console.log("STATE → AUTO-CREATING DEFAULT ACCOUNT");
+          
+          const { generateId } = await import("../../utils/id");
+          const now = new Date().toISOString();
+          
+          const defaultAccount = await createAccount({
+            id: generateId(),
+            profileId: profile.id,
+            name: "My Account",
+            initialBalance: 0,
+            currencyCode: "NGN",
+            createdAt: now,
+            updatedAt: now,
+          });
+
+          console.log("DEFAULT ACCOUNT CREATED:", defaultAccount.id);
+          
+          // Select this account as the current account
+          const { selectAccount } = await import("../../features/accounts/services/accountSelectionService");
+          selectAccount(defaultAccount);
+        } else if (existingAccounts.length > 0) {
+          // Ensure an account is selected if not already
+          const { selectAccount } = await import("../../features/accounts/services/accountSelectionService");
+          const currentAccountId = useAccountStore.getState().currentAccountId;
+          
+          if (!currentAccountId) {
+            console.log("STATE → SELECTING FIRST ACCOUNT");
+            selectAccount(existingAccounts[0]);
+          }
         }
 
         // 6. Check this user's PIN

@@ -129,7 +129,7 @@ export class GoogleAuthProvider implements IAuthProvider<GoogleCredentials> {
       let usedUrl: string;
       
       try {
-        const result = await fetchWithFallback('/api/auth/google', {
+        const result = await fetchWithFallback('/api/v2/auth/google', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

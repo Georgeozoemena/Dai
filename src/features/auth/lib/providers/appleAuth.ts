@@ -40,7 +40,7 @@ export class AppleAuthProvider implements IAuthProvider<AppleCredentials> {
       const deviceInfo = await DeviceManager.getDeviceInfo();
 
       // Call backend authentication endpoint
-      const response = await fetch(`${API_URL}/api/auth/apple`, {
+      const response = await fetch(`${API_URL}/api/v2/auth/apple`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -16,7 +16,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Use Face ID to unlock Dai and access your financial data securely."
+        "NSFaceIDUsageDescription": "Use Face ID to unlock Dai and access your financial data securely.",
+        "NSCameraUsageDescription": "Allow Dai to access your camera to take profile pictures.",
+        "NSPhotoLibraryUsageDescription": "Allow Dai to access your photo library to select profile pictures."
       }
     },
     "android": {
@@ -34,7 +36,10 @@
         "ACCESS_NETWORK_STATE",
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -45,6 +50,13 @@
       "expo-sqlite",
       "expo-secure-store",
       "expo-local-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Dai to access your photos to set your profile picture.",
+          "cameraPermission": "Allow Dai to access your camera to take profile pictures."
+        }
+      ],
       [
         "expo-notifications",
         {

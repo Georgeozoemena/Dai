@@ -132,7 +132,6 @@ export function PhoneInput({
   return (
     <View style={styles.container}>
       <View style={[styles.inputContainer, error && styles.inputError]}>
-        {/* Country Picker Button */}
         <Pressable
           onPress={() => !disabled && setShowCountryPicker(true)}
           disabled={disabled}
@@ -143,7 +142,6 @@ export function PhoneInput({
           <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
         </Pressable>
 
-        {/* Phone Number Input */}
         <TextInput
           value={displayValue}
           onChangeText={handleChangeText}
@@ -157,7 +155,6 @@ export function PhoneInput({
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      {/* Country Picker Modal */}
       <Modal
         visible={showCountryPicker}
         animationType="slide"
@@ -166,7 +163,6 @@ export function PhoneInput({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Country</Text>
               <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
@@ -174,7 +170,6 @@ export function PhoneInput({
               </TouchableOpacity>
             </View>
 
-            {/* Search */}
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color={colors.textSecondary} />
               <TextInput
@@ -186,7 +181,6 @@ export function PhoneInput({
               />
             </View>
 
-            {/* Country List */}
             <FlatList
               data={filteredCountries}
               keyExtractor={item => item.code}

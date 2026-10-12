@@ -21,7 +21,7 @@ const settingsItems = [
     title: "Profile",
     description: "Manage your personal information",
     icon: "person-outline" as const,
-    route: "/profile",
+    route: "/auth/bio",
   },
   {
     title: "Linked Accounts",
