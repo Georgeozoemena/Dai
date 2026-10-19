@@ -251,7 +251,7 @@ export function DashboardScreen() {
         {/* Minimal Header */}
         <View
           style={{
-            paddingTop: 60,
+            paddingTop: 16,
             paddingBottom: 16,
             paddingHorizontal: 20,
             flexDirection: "row",
@@ -688,7 +688,7 @@ export function DashboardScreen() {
               marginTop: 6,
               color: monthlySummary.netSavings < 0 
                 ? "#ef4444" 
-                : monthlySummary.expenses >= monthlySummary.income * 0.75
+              : monthlySummary.income > 0 && monthlySummary.expenses >= monthlySummary.income * 0.75
                 ? "#e6a700"
                 : "#4ade80",
               fontSize: 13,
@@ -696,7 +696,7 @@ export function DashboardScreen() {
             }}
           >
             {monthlySummary.netSavings >= 0 
-              ? monthlySummary.expenses >= monthlySummary.income * 0.75
+              ? monthlySummary.income > 0 && monthlySummary.expenses >= monthlySummary.income * 0.75
                 ? "Almost exceeding Income"
                 : "Net Savings"
               : "Net Deficit"

@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import {
   Alert,
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,10 +29,12 @@ import {
   isPaymentDue,
   isPaymentOverdue,
 } from "../services/savingsGoalService";
+import { sendImmediateReminder } from "../services/savingsReminderService";
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
 import { colors, screenStyles } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 interface SavingsGoalDetailScreenProps {
   goalId: string;
@@ -230,29 +233,48 @@ export function SavingsGoalDetailScreen({
   };
 
   const handleDeleteContribution = (contribution: SavingsContribution) => {
-    console.log('DELETE CONTRIBUTION CLICKED:', contribution.id);
-    Alert.alert(
-      "Delete Contribution?",
-      "This contribution will be removed from your goal.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              console.log('DELETING CONTRIBUTION:', contribution.id);
-              await deleteContribution(contribution.id, contribution.goalId, contribution.amount);
-              await loadGoalData();
-              Alert.alert("Contribution Deleted", "The contribution has been removed.");
-            } catch (error) {
-              console.error("FAILED TO DELETE CONTRIBUTION:", error);
-              Alert.alert("Delete Failed", "Could not delete the contribution.");
-            }
-          },
-        },
-      ],
-    );
+    const removeContribution = async () => {
+      try {
+        await deleteContribution(
+          contribution.id,
+          contribution.goalId,
+          contribution.amount,
+        );
+
+        const [updatedGoal, updatedContributions] = await Promise.all([
+          getSavingsGoal(contribution.goalId),
+          getContributions(contribution.goalId),
+        ]);
+
+        setGoal(updatedGoal);
+        setContributions(updatedContributions);
+        if (Platform.OS === "web") {
+          window.alert("Contribution deleted.");
+        } else {
+          Alert.alert("Contribution Deleted", "The contribution has been removed.");
+        }
+      } catch (error) {
+        console.error("FAILED TO DELETE CONTRIBUTION:", error);
+        if (Platform.OS === "web") {
+          window.alert("Could not delete the contribution. Please try again.");
+        } else {
+          Alert.alert("Delete Failed", "Could not delete the contribution.");
+        }
+      }
+    };
+
+    const message = "This contribution will be removed from your goal.";
+    if (Platform.OS === "web") {
+      if (window.confirm(`Delete Contribution?\n\n${message}`)) {
+        void removeContribution();
+      }
+      return;
+    }
+
+    Alert.alert("Delete Contribution?", message, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => void removeContribution() },
+    ]);
   };
 
   if (loading) {
@@ -282,23 +304,16 @@ export function SavingsGoalDetailScreen({
 
   return (
     <ScrollView style={screenStyles.root} contentContainerStyle={screenStyles.scrollContent}>
-      {/* Header with Edit Button */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <Ionicons name="people" size={24} color={colors.secondary} />
-            <Text style={screenStyles.title}>{goal.name}</Text>
-          </View>
-          {goal.description && (
-            <Text style={[screenStyles.subtitle, { marginTop: 4 }]}>{goal.description}</Text>
-          )}
-        </View>
-
+      <View style={styles.pageHeader}>
+        <PageBackButton onPress={() => router.back()} style={styles.pageBackButton} />
+        <Text style={styles.pageHeaderTitle}>Goal details</Text>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={showEditMode ? "Close edit goal" : "Edit goal"}
           onPress={() => setShowEditMode(!showEditMode)}
-          style={{ padding: 8 }}
+          style={styles.editButton}
         >
-          <Ionicons name={showEditMode ? "close" : "create-outline"} size={24} color={colors.text} />
+          <Ionicons name={showEditMode ? "close" : "create-outline"} size={21} color={colors.text} />
         </Pressable>
       </View>
 
@@ -363,21 +378,33 @@ export function SavingsGoalDetailScreen({
 
       {/* Progress Card */}
       <View style={styles.progressCard}>
-        <Text style={styles.progressTitle}>
-          {completed ? "Goal Completed!" : `${percentage.toFixed(0)}% Complete`}
-        </Text>
+        <View style={styles.heroTopRow}>
+          <View style={styles.heroIcon}>
+            <Ionicons name="people" size={21} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.heroEyebrow}>{completed ? "GOAL COMPLETE" : "SAVINGS GOAL"}</Text>
+            <Text style={styles.heroName} numberOfLines={2}>{goal.name}</Text>
+          </View>
+          <View style={styles.heroPercentBadge}>
+            <Text style={styles.heroPercentText}>{percentage.toFixed(0)}%</Text>
+          </View>
+        </View>
+
+        {goal.description ? (
+          <Text style={styles.heroDescription} numberOfLines={2}>{goal.description}</Text>
+        ) : null}
 
         <View style={styles.progressAmounts}>
-          <View>
-            <Text style={styles.progressLabel}>Saved</Text>
-            <Text style={styles.progressAmount}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.progressLabel}>SAVED SO FAR</Text>
+            <Text style={styles.progressAmount} numberOfLines={1} adjustsFontSizeToFit>
               {formatCurrency(goal.currentAmount, currencyCode)}
             </Text>
           </View>
-          <Text style={styles.progressSeparator}>/</Text>
-          <View>
-            <Text style={styles.progressLabel}>Target</Text>
-            <Text style={styles.progressAmount}>
+          <View style={styles.heroTarget}>
+            <Text style={styles.progressLabel}>TARGET</Text>
+            <Text style={styles.progressTargetAmount} numberOfLines={1} adjustsFontSizeToFit>
               {formatCurrency(goal.targetAmount, currencyCode)}
             </Text>
           </View>
@@ -389,23 +416,28 @@ export function SavingsGoalDetailScreen({
               styles.progressBarFill,
               {
                 width: `${percentage}%`,
-                backgroundColor: completed ? colors.success : colors.secondary,
+                backgroundColor: completed ? colors.success : colors.primary,
               },
             ]}
           />
         </View>
 
         {goal.targetDate && !completed && (
-          <Text style={styles.targetDateText}>
-            Target: {new Date(goal.targetDate).toLocaleDateString()}
-          </Text>
+          <View style={styles.targetDatePill}>
+            <Ionicons name="calendar-outline" size={15} color={colors.primary} />
+            <Text style={styles.targetDateText}>
+              Target {new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+          </View>
         )}
       </View>
 
       {/* Discipline Stats Card - Shown for ALL goals */}
       <View style={styles.disciplineStatsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <Ionicons name="trophy" size={24} color={colors.secondary} />
+        <View style={styles.sectionHeading}>
+          <View style={styles.sectionIcon}>
+            <Ionicons name="trophy" size={18} color={colors.secondary} />
+          </View>
           <Text style={styles.disciplineStatsTitle}>Your Discipline</Text>
           {stats.currentStreak > 0 && (
             <View style={styles.streakBadge}>
@@ -486,19 +518,38 @@ export function SavingsGoalDetailScreen({
 
         {/* Quick Scheduled Payment Button */}
         {!completed && (
-          <Pressable
-            onPress={handleMakeScheduledPayment}
-            disabled={saving}
-            style={[
-              styles.scheduledPaymentButton,
-              { opacity: saving ? 0.5 : 1 }
-            ]}
-          >
-            <Ionicons name="wallet" size={20} color={colors.background} />
-            <Text style={styles.scheduledPaymentButtonText}>
-              Pay {formatCurrency(goal.suggestedAmount, currencyCode)} Now
-            </Text>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={handleMakeScheduledPayment}
+              disabled={saving}
+              style={[
+                styles.scheduledPaymentButton,
+                { opacity: saving ? 0.5 : 1 }
+              ]}
+            >
+              <Ionicons name="wallet" size={20} color={colors.background} />
+              <Text style={styles.scheduledPaymentButtonText}>
+                Pay {formatCurrency(goal.suggestedAmount, currencyCode)} Now
+              </Text>
+            </Pressable>
+
+            {/* Reminder Button */}
+            <Pressable
+              onPress={async () => {
+                await sendImmediateReminder(goal);
+                Alert.alert(
+                  "Reminder Sent!",
+                  "You'll receive a notification reminder for this goal."
+                );
+              }}
+              style={styles.reminderButton}
+            >
+              <Ionicons name="notifications-outline" size={20} color={colors.secondary} />
+              <Text style={styles.reminderButtonText}>
+                Remind Me
+              </Text>
+            </Pressable>
+          </>
         )}
       </View>
 
@@ -506,11 +557,18 @@ export function SavingsGoalDetailScreen({
 
       {/* Add Contribution */}
       {!completed && (
-        <View style={{ gap: 10 }}>
-          <Text style={screenStyles.sectionTitle}>Add Custom Contribution</Text>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: -6 }}>
+        <View style={styles.contributionForm}>
+          <View style={styles.sectionHeading}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="add" size={18} color={colors.secondary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={screenStyles.sectionTitle}>Add a contribution</Text>
+              <Text style={styles.contributionHint}>
             Add extra beyond your scheduled {formatCurrency(goal.suggestedAmount, currencyCode)} {goal.frequency} payment
-          </Text>
+              </Text>
+            </View>
+          </View>
 
           <TextInput
             value={contributionAmount}
@@ -542,9 +600,10 @@ export function SavingsGoalDetailScreen({
       {/* Contribution History */}
       {contributions.length > 0 && (
         <View style={{ gap: 12 }}>
-          <Text style={screenStyles.sectionTitle}>
-            Contribution History ({contributions.length})
-          </Text>
+          <View style={styles.historyHeading}>
+            <Text style={screenStyles.sectionTitle}>Activity</Text>
+            <Text style={styles.historyCount}>{contributions.length}</Text>
+          </View>
 
           {contributions.map((contribution) => (
             <View key={contribution.id} style={styles.contributionItem}>
@@ -561,6 +620,8 @@ export function SavingsGoalDetailScreen({
               </View>
 
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Delete contribution of ${formatCurrency(contribution.amount, currencyCode)}`}
                 onPress={() => handleDeleteContribution(contribution)}
                 style={styles.deleteContributionBtn}
               >
@@ -573,14 +634,14 @@ export function SavingsGoalDetailScreen({
 
       {/* Delete Goal */}
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Delete savings goal"
         onPress={handleDelete}
         disabled={deleting}
-        style={[
-          screenStyles.outlineButton,
-          { borderColor: colors.error, opacity: deleting ? 0.5 : 1 },
-        ]}
+        style={[styles.deleteGoalButton, { opacity: deleting ? 0.5 : 1 }]}
       >
-        <Text style={[screenStyles.outlineButtonText, { color: colors.error }]}>
+        <Ionicons name="trash-outline" size={18} color={colors.error} />
+        <Text style={styles.deleteGoalText}>
           {deleting ? "Deleting..." : "Delete Goal"}
         </Text>
       </Pressable>
@@ -589,74 +650,216 @@ export function SavingsGoalDetailScreen({
 }
 
 const styles = StyleSheet.create({
-  editContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    gap: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+  pageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  progressCard: {
-    backgroundColor: colors.secondary,
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+  pageBackButton: {
+    marginBottom: 0,
+    marginLeft: 0,
   },
-  progressTitle: {
-    fontSize: 20,
+  pageHeaderTitle: {
+    flex: 1,
+    fontSize: 17,
     fontWeight: "700",
-    color: colors.surface,
-    textAlign: "center",
+    color: colors.text,
   },
-  progressAmounts: {
+  editButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
+  },
+  deleteGoalButton: {
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    borderRadius: 16,
+    backgroundColor: `${colors.error}08`,
+    borderWidth: 1,
+    borderColor: `${colors.error}35`,
+  },
+  deleteGoalText: {
+    color: colors.error,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  editContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    padding: 18,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
+  },
+  contributionForm: {
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    padding: 18,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
+  },
+  sectionHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  sectionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}35`,
+  },
+  contributionHint: {
+    marginTop: 3,
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  historyHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  historyCount: {
+    minWidth: 24,
+    textAlign: "center",
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    backgroundColor: colors.surface,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  progressCard: {
+    backgroundColor: colors.secondary,
+    borderRadius: 26,
+    padding: 22,
+    gap: 20,
+    overflow: "hidden",
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}24`,
+  },
+  heroEyebrow: {
+    color: `${colors.surface}99`,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 3,
+  },
+  heroName: {
+    color: colors.surface,
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: "700",
+  },
+  heroPercentBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 14,
+    backgroundColor: `${colors.primary}20`,
+  },
+  heroPercentText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  heroDescription: {
+    color: `${colors.surface}B8`,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: -8,
+  },
+  progressAmounts: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 16,
+  },
   progressLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginBottom: 4,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    color: `${colors.surface}99`,
+    marginBottom: 6,
   },
   progressAmount: {
-    fontSize: 18,
+    fontSize: 27,
+    letterSpacing: -0.5,
     fontWeight: "700",
     color: colors.surface,
   },
-  progressSeparator: {
-    fontSize: 24,
-    color: colors.textMuted,
-    fontWeight: "200",
+  heroTarget: {
+    alignItems: "flex-end",
+  },
+  progressTargetAmount: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: `${colors.surface}D9`,
   },
   progressBar: {
-    height: 12,
-    backgroundColor: colors.borderInput,
-    borderRadius: 10,
+    height: 9,
+    backgroundColor: `${colors.surface}28`,
+    borderRadius: 8,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
+    borderRadius: 8,
   },
   targetDateText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: "center",
+    fontSize: 12,
+    color: `${colors.surface}D9`,
+    fontWeight: "600",
+  },
+  targetDatePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 7,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: `${colors.surface}14`,
+    marginTop: -8,
   },
   disciplineStatsCard: {
-    backgroundColor: `${colors.secondary}10`,
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    padding: 18,
     gap: 16,
-    borderWidth: 1.5,
-    borderColor: colors.secondary,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
   },
   disciplineStatsTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "700",
     color: colors.text,
   },
@@ -679,9 +882,9 @@ const styles = StyleSheet.create({
   disciplineStatItem: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
   },
   disciplineStatLabel: {
@@ -700,7 +903,7 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   nextPaymentOverdue: {
     backgroundColor: `${colors.error}15`,
@@ -724,17 +927,30 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: colors.secondary,
     paddingVertical: 16,
-    borderRadius: 14,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 16,
   },
   scheduledPaymentButtonText: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.background,
+  },
+  reminderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
+  },
+  reminderButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.secondary,
   },
   suggestionsCard: {
     backgroundColor: `${colors.primary}10`,

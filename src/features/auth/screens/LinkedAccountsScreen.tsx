@@ -14,6 +14,7 @@ import { useIdentityManager } from '../hooks/useIdentityManager';
 import { useAuthStore } from '../../../store/auth/authStore';
 import { getProviderLabel } from '../components/ui/ProviderButton';
 import { colors, radii, screenStyles } from '../../../theme';
+import { PageBackButton } from '../../../components/PageBackButton';
 import type { AuthProvider } from '../lib/providers/types';
 
 /**
@@ -130,9 +131,7 @@ export function LinkedAccountsScreen() {
       <ScrollView contentContainerStyle={screenStyles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </Pressable>
+          <PageBackButton onPress={() => router.back()} style={styles.backButton} />
           <Text style={screenStyles.title}>Linked Accounts</Text>
         </View>
 
@@ -310,9 +309,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',

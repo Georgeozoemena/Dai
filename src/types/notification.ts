@@ -4,6 +4,7 @@ export type NotificationType =
   | 'budget_reached'
   | 'goal_milestone'
   | 'goal_achieved'
+  | 'savings_reminder'
   | 'low_balance'
   | 'large_expense'
   | 'reminder'

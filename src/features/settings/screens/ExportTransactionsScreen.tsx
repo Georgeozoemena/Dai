@@ -14,6 +14,9 @@ import { getTransactions } from "../../transactions/services/transactionService"
 
 import { exportTransactionsToCsv } from "../services/exportService";
 import { colors, screenStyles } from "../../../theme";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 export function ExportTransactionsScreen() {
   const currentAccountId = useAccountStore(
@@ -79,6 +82,7 @@ export function ExportTransactionsScreen() {
       contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
+        <PageBackButton onPress={() => router.back()} />
         <Text style={screenStyles.title}>Export Transactions</Text>
 
         <Text style={screenStyles.subtitle}>

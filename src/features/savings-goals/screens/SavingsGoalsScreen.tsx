@@ -4,6 +4,7 @@ import { useFocusEffect, router } from "expo-router";
 import {
   Alert,
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,13 +12,14 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 import type { SavingsGoal } from "../../../types/savingsGoal";
 
 import { useAccountStore } from "../../../store/account/accountStore";
 
 import { getSavingsGoals, isPaymentDue, isPaymentOverdue, deleteSavingsGoal } from "../services/savingsGoalService";
+import { checkAndSendReminders, showPaymentReminderPopup } from "../services/savingsReminderService";
 
 import { formatCurrency } from "../../../utils/currency";
 import { useAccountCurrency } from "../../../hooks/useAccountCurrency";
@@ -47,6 +49,27 @@ export function SavingsGoalsScreen() {
           const data = await getSavingsGoals(currentAccountId);
 
           setGoals(data);
+
+          // Check for due/overdue payments and send reminders
+          await checkAndSendReminders(data, currentAccountId);
+
+          // Show popup for overdue payments (most urgent)
+          const overdueGoal = data.find(goal =>
+            goal.currentAmount < goal.targetAmount && isPaymentOverdue(goal)
+          );
+
+          if (overdueGoal) {
+            showPaymentReminderPopup(overdueGoal);
+          } else {
+            // If no overdue, show popup for due payments
+            const dueGoal = data.find(goal =>
+              goal.currentAmount < goal.targetAmount && isPaymentDue(goal)
+            );
+
+            if (dueGoal) {
+              showPaymentReminderPopup(dueGoal);
+            }
+          }
         } catch (error) {
           console.error("FAILED TO LOAD SAVINGS GOALS:", error);
         } finally {
@@ -100,40 +123,57 @@ export function SavingsGoalsScreen() {
   const activeCount = goals.filter(g => g.currentAmount < g.targetAmount).length;
   const completedCount = goals.filter(g => g.currentAmount >= g.targetAmount).length;
 
+  const removeGoal = async (goal: SavingsGoal) => {
+    try {
+      await deleteSavingsGoal(goal.id);
+      const data = await getSavingsGoals(currentAccountId!);
+      setGoals(data);
+    } catch (error) {
+      console.error("FAILED TO DELETE SAVINGS GOAL:", error);
+      Alert.alert("Delete Failed", "Could not delete the savings goal.");
+    }
+  };
+
+  const confirmDeleteGoal = (goal: SavingsGoal) => {
+    const message = `"${goal.name}" and all its contributions will be permanently deleted.`;
+
+    if (Platform.OS === "web") {
+      if (window.confirm(`Delete Savings Goal?\n\n${message}`)) {
+        void removeGoal(goal);
+      }
+      return;
+    }
+
+    Alert.alert("Delete Savings Goal?", message, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => void removeGoal(goal) },
+    ]);
+  };
+
   return (
-    <ScrollView
-      style={screenStyles.root}
-      contentContainerStyle={screenStyles.scrollContent}
-    >
-      {/* Header */}
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Ionicons name="people" size={28} color={colors.secondary} />
-            <Text style={screenStyles.title}>Savings Goals</Text>
-          </View>
-
-          <Text style={screenStyles.subtitle}>Ajo discipline. Personal success.</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Custom Header with Back Button */}
+      <View style={styles.header}>
+        <PageBackButton
+          onPress={() => router.back()}
+          style={{ marginBottom: 0, marginLeft: 0, marginRight: 4 }}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Savings Goals</Text>
+          <Text style={styles.headerSubtitle}>Ajo discipline. Personal success.</Text>
         </View>
-
         <Pressable
           onPress={() => router.push("/create-goal")}
-          style={[
-            screenStyles.primaryButton,
-            { paddingHorizontal: 16, paddingVertical: 12 },
-          ]}
+          style={styles.addButton}
         >
-          <Text style={screenStyles.primaryButtonText}>+ Add</Text>
+          <Ionicons name="add" size={24} color={colors.primary} />
         </Pressable>
       </View>
 
+      <ScrollView
+        style={screenStyles.root}
+        contentContainerStyle={screenStyles.scrollContent}
+      >
       {/* Filter Tabs */}
       {goals.length > 0 && (
         <View style={styles.filterTabs}>
@@ -245,12 +285,11 @@ export function SavingsGoalsScreen() {
 
             const remaining = goal.targetAmount - goal.currentAmount;
             const completed = goal.currentAmount >= goal.targetAmount;
-            
-            // Determine status and color
             const isAlmostThere = percentage >= 80 && !completed;
-            const progressColor = completed 
-              ? colors.success 
-              : colors.secondary;
+            const progressColor = completed ? colors.success : colors.primary;
+            const estimatedPayments = goal.suggestedAmount > 0
+              ? Math.ceil(remaining / goal.suggestedAmount)
+              : null;
               
             // Calculate days remaining if target date exists
             let daysRemaining: number | null = null;
@@ -263,153 +302,113 @@ export function SavingsGoalsScreen() {
               isOverdue = daysRemaining < 0;
             }
             
-            // Payment status (all goals have this now)
             const paymentIsDue = isPaymentDue(goal);
             const paymentIsOverdue = isPaymentOverdue(goal);
 
             return (
-              <Pressable
+              <View
                 key={goal.id}
-                onPress={() => router.push(`/goal/${goal.id}`)}
                 style={[
                   styles.goalCard,
-                  paymentIsDue && styles.paymentDueCard,
+                  (paymentIsDue || paymentIsOverdue) && styles.paymentDueCard,
                 ]}
               >
-                {/* Gradient Background for completed goals */}
-                {completed && (
-                  <LinearGradient
-                    colors={['rgba(184, 243, 74, 0.1)', 'rgba(184, 243, 74, 0.05)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.completedGradient}
-                  />
-                )}
-                
-                {/* Ajo Gradient Background for all active goals */}
-                {!completed && (
-                  <LinearGradient
-                    colors={['rgba(184, 243, 74, 0.08)', 'rgba(184, 243, 74, 0.02)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.completedGradient}
-                  />
-                )}
-
-                {/* Header: Icon, Name, Status Badge, Delete */}
                 <View style={styles.goalHeader}>
                   <View style={styles.goalIconContainer}>
                     <Ionicons 
                       name="people" 
                       size={20} 
-                      color={completed ? colors.success : colors.secondary} 
+                      color={completed ? colors.success : colors.secondary}
                     />
                   </View>
                   
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.goalName}>{goal.name}</Text>
-                    <Text style={styles.goalSubtitle}>
-                      {percentage.toFixed(0)}% • {formatCurrency(goal.currentAmount, currencyCode)} of {formatCurrency(goal.targetAmount, currencyCode)}
-                    </Text>
-                  </View>
-
-                  {/* Status badges and delete button */}
-                  <View style={styles.headerActions}>
-                    {completed && (
-                      <View style={styles.completedBadge}>
-                        <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                        <Text style={styles.completedText}>Done</Text>
-                      </View>
-                    )}
-                    
-                    {paymentIsDue && !completed && (
-                      <View style={styles.paymentDueBadge}>
-                        <Ionicons name="time" size={12} color={colors.secondary} />
-                        <Text style={styles.paymentDueText}>Due</Text>
-                      </View>
-                    )}
-                    
-                    {paymentIsOverdue && !completed && (
-                      <View style={styles.overdueBadge}>
-                        <Ionicons name="alert-circle" size={12} color={colors.error} />
-                        <Text style={styles.overdueText}>Late</Text>
-                      </View>
-                    )}
-                    
-                    {isAlmostThere && !paymentIsDue && !paymentIsOverdue && (
-                      <View style={styles.almostThereBadge}>
-                        <Ionicons name="trending-up" size={12} color={colors.primary} />
-                        <Text style={styles.almostThereText}>Almost!</Text>
-                      </View>
-                    )}
-
-                    {/* Delete Button - Integrated */}
                     <Pressable
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        console.log('DELETE GOAL CLICKED:', goal.id);
-                        Alert.alert(
-                          "Delete Savings Goal?",
-                          `"${goal.name}" and all its contributions will be permanently deleted.`,
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            {
-                              text: "Delete",
-                              style: "destructive",
-                              onPress: async () => {
-                                try {
-                                  await deleteSavingsGoal(goal.id);
-                                  const data = await getSavingsGoals(currentAccountId!);
-                                  setGoals(data);
-                                  Alert.alert("Goal Deleted", "Your savings goal has been deleted.");
-                                } catch (error) {
-                                  console.error("FAILED TO DELETE SAVINGS GOAL:", error);
-                                  Alert.alert("Delete Failed", "Could not delete the savings goal.");
-                                }
-                              },
-                            },
-                          ],
-                        );
-                      }}
-                      style={styles.integratedDeleteButton}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${goal.name}`}
+                      onPress={() => router.push(`/goal/${goal.id}`)}
                     >
-                      <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                      <Text style={styles.goalName} numberOfLines={1}>{goal.name}</Text>
+                      <View style={styles.goalStatusRow}>
+                        {completed ? (
+                          <View style={styles.completedBadge}>
+                            <Ionicons name="checkmark-circle" size={13} color={colors.success} />
+                            <Text style={styles.completedText}>Completed</Text>
+                          </View>
+                        ) : paymentIsOverdue ? (
+                          <View style={styles.overdueBadge}>
+                            <Ionicons name="alert-circle" size={13} color={colors.error} />
+                            <Text style={styles.overdueText}>Payment overdue</Text>
+                          </View>
+                        ) : paymentIsDue ? (
+                          <View style={styles.paymentDueBadge}>
+                            <Ionicons name="time" size={13} color={colors.secondary} />
+                            <Text style={styles.paymentDueText}>Payment due</Text>
+                          </View>
+                        ) : isAlmostThere ? (
+                          <View style={styles.almostThereBadge}>
+                            <Ionicons name="trending-up" size={13} color={colors.secondary} />
+                            <Text style={styles.almostThereText}>Almost there</Text>
+                          </View>
+                        ) : (
+                          <Text style={styles.goalSubtitle}>{goal.frequency} goal</Text>
+                        )}
+                      </View>
                     </Pressable>
                   </View>
+
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete ${goal.name}`}
+                    onPress={() => confirmDeleteGoal(goal)}
+                    style={styles.integratedDeleteButton}
+                  >
+                    <Ionicons name="trash-outline" size={17} color={colors.error} />
+                    <Text style={styles.deleteButtonText}>Delete</Text>
+                  </Pressable>
                 </View>
 
-                {/* Description if available */}
-                {goal.description && (
-                  <Text style={styles.goalDescription} numberOfLines={2}>
-                    {goal.description}
-                  </Text>
-                )}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`View progress for ${goal.name}`}
+                  onPress={() => router.push(`/goal/${goal.id}`)}
+                  style={styles.goalCardBody}
+                >
+                  {goal.description && (
+                    <Text style={styles.goalDescription} numberOfLines={2}>
+                      {goal.description}
+                    </Text>
+                  )}
 
-                {/* Progress Bar - Thicker & More Prominent */}
-                <View style={styles.progressBarContainer}>
-                  <View style={styles.progressTrack}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: `${percentage}%`,
-                          backgroundColor: progressColor,
-                        }
-                      ]}
-                    />
+                <View style={styles.amountRow}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.amountLabel}>SAVED</Text>
+                    <Text style={styles.savedAmount} numberOfLines={1} adjustsFontSizeToFit>
+                      {formatCurrency(goal.currentAmount, currencyCode)}
+                    </Text>
+                  </View>
+                  <View style={styles.amountTarget}>
+                    <Text style={styles.amountLabel}>TARGET</Text>
+                    <Text style={styles.targetAmount} numberOfLines={1} adjustsFontSizeToFit>
+                      {formatCurrency(goal.targetAmount, currencyCode)}
+                    </Text>
                   </View>
                 </View>
 
-                {/* Meta Info Row with Icons */}
-                <View style={styles.metaInfoRow}>
+                <View style={styles.progressSection}>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${percentage}%`, backgroundColor: progressColor }]} />
+                  </View>
+                  <Text style={styles.progressPercent}>{percentage.toFixed(0)}%</Text>
+                </View>
+
+                <View style={styles.cardFooter}>
                   {goal.streak > 0 && (
                     <View style={styles.metaInfoItem}>
-                      <Text style={styles.metaInfoIcon}>🔥</Text>
+                      <Ionicons name="flame" size={15} color={colors.warning} />
                       <Text style={styles.metaInfoText}>{goal.streak}</Text>
                     </View>
                   )}
-                  
                   {goal.nextDueDate && !completed && (
                     <View style={styles.metaInfoItem}>
                       <Ionicons name="alarm-outline" size={14} color={colors.textSecondary} />
@@ -418,43 +417,65 @@ export function SavingsGoalsScreen() {
                       </Text>
                     </View>
                   )}
-                  
-                  <View style={styles.metaInfoItem}>
-                    <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-                    <Text style={styles.metaInfoText}>{goal.frequency}</Text>
-                  </View>
                 </View>
 
-                {/* Footer: Summary */}
                 {!completed && (
                   <View style={styles.footerRow}>
-                    <Text style={styles.footerText}>
-                      {formatCurrency(remaining, currencyCode)} to go • {Math.ceil(remaining / goal.suggestedAmount)} payments
-                    </Text>
-                    
-                    {daysRemaining !== null && (
-                      <Text style={[
-                        styles.footerTextRight,
-                        isOverdue && { color: colors.error }
-                      ]}>
-                        {isOverdue 
-                          ? `${Math.abs(daysRemaining)}d overdue`
-                          : `${daysRemaining}d left`
-                        }
-                      </Text>
-                    )}
+                    <View>
+                      <Text style={styles.footerText}>STILL TO SAVE</Text>
+                      <Text style={styles.remainingAmount}>{formatCurrency(remaining, currencyCode)}</Text>
+                    </View>
+                    <View style={styles.footerRight}>
+                      {estimatedPayments !== null && (
+                        <Text style={styles.footerText}>{estimatedPayments} {estimatedPayments === 1 ? "payment" : "payments"}</Text>
+                      )}
+                      {daysRemaining !== null && (
+                        <Text style={[styles.footerTextRight, isOverdue && { color: colors.error }]}>
+                          {isOverdue ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d left`}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 )}
-              </Pressable>
+                </Pressable>
+              </View>
             );
           })}
         </View>
       )}
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: colors.background,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  headerSubtitle: {
+    marginTop: 3,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.secondary,
+  },
   filterTabs: {
     flexDirection: 'row',
     gap: 8,
@@ -483,27 +504,21 @@ const styles = StyleSheet.create({
   },
   goalCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    gap: 14,
-    borderWidth: 1.5,
-    borderColor: colors.secondary,
-    position: 'relative',
+    borderRadius: 22,
+    padding: 18,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+    position: "relative",
     overflow: 'hidden',
   },
   paymentDueCard: {
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  completedGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    borderColor: `${colors.warning}80`,
   },
   goalHeader: {
     flexDirection: 'row',
@@ -511,35 +526,47 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   goalIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: `${colors.secondary}20`,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: `${colors.primary}35`,
     alignItems: 'center',
     justifyContent: 'center',
   },
   goalName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 2,
+    marginBottom: 5,
+  },
+  goalStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   goalSubtitle: {
     fontSize: 13,
     color: colors.textSecondary,
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   integratedDeleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    minWidth: 82,
+    height: 40,
+    borderRadius: 12,
+    flexDirection: "row",
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: `${colors.textMuted}10`,
+    gap: 5,
+    paddingHorizontal: 10,
+    backgroundColor: `${colors.error}08`,
+    borderWidth: 1,
+    borderColor: `${colors.error}35`,
+  },
+  deleteButtonText: {
+    fontSize: 12,
+    color: colors.error,
+    fontWeight: "700",
+  },
+  goalCardBody: {
+    gap: 16,
   },
   goalDescription: {
     fontSize: 13,
@@ -602,32 +629,67 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.error,
   },
-  progressBarContainer: {
-    paddingVertical: 2,
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    marginTop: 2,
+  },
+  amountTarget: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  amountLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  savedAmount: {
+    color: colors.text,
+    fontSize: 25,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+  },
+  targetAmount: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  progressSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   progressTrack: {
-    height: 12,
-    backgroundColor: colors.border,
-    borderRadius: 6,
+    flex: 1,
+    height: 9,
+    backgroundColor: colors.borderInput,
+    borderRadius: 5,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: 5,
   },
-  metaInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flexWrap: 'wrap',
+  progressPercent: {
+    minWidth: 38,
+    textAlign: "right",
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    minHeight: 20,
   },
   metaInfoItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-  },
-  metaInfoIcon: {
-    fontSize: 14,
   },
   metaInfoText: {
     fontSize: 12,
@@ -638,11 +700,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.borderInput,
+    paddingTop: 13,
+    marginTop: -3,
   },
   footerText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
     fontWeight: '500',
+  },
+  remainingAmount: {
+    marginTop: 3,
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: "700",
+  },
+  footerRight: {
+    alignItems: "flex-end",
+    gap: 3,
   },
   footerTextRight: {
     fontSize: 12,

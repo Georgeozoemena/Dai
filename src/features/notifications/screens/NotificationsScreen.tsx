@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Text, View, Pressable, ScrollView, Alert, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { PageBackButton } from "../../../components/PageBackButton";
 import { router, useFocusEffect } from "expo-router";
 
 import { colors } from "../../../theme";
@@ -222,7 +223,7 @@ export function NotificationsScreen() {
         {/* Header */}
         <View
           style={{
-            paddingTop: 60,
+            paddingTop: 16,
             paddingBottom: 20,
             paddingHorizontal: 20,
             flexDirection: "row",
@@ -230,18 +231,7 @@ export function NotificationsScreen() {
             justifyContent: "space-between",
           }}
         >
-          <Pressable
-            onPress={() => router.back()}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-          </Pressable>
+          <PageBackButton onPress={() => router.back()} style={{ marginBottom: 0, marginLeft: 0 }} />
 
           <Text
             style={{
@@ -275,7 +265,7 @@ export function NotificationsScreen() {
         {/* Header */}
         <View
           style={{
-            paddingTop: 60,
+            paddingTop: 16,
             paddingBottom: 20,
             paddingHorizontal: 20,
             flexDirection: "row",
@@ -283,18 +273,7 @@ export function NotificationsScreen() {
             justifyContent: "space-between",
           }}
         >
-          <Pressable
-            onPress={() => router.back()}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-          </Pressable>
+          <PageBackButton onPress={() => router.back()} style={{ marginBottom: 0, marginLeft: 0 }} />
 
           <Text
             style={{
@@ -498,7 +477,7 @@ export function NotificationsScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: 60,
+          paddingTop: 16,
           paddingBottom: 20,
           paddingHorizontal: 20,
           flexDirection: "row",
@@ -507,18 +486,7 @@ export function NotificationsScreen() {
           backgroundColor: "#FEFDFB",
         }}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-        </Pressable>
+        <PageBackButton onPress={() => router.back()} style={{ marginBottom: 0, marginLeft: 0 }} />
 
         <Text
           style={{

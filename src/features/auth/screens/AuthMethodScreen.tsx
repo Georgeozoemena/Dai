@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   brandingSection: {

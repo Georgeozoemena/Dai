@@ -15,6 +15,7 @@ import { CURRENCIES } from "../../../constants/currencies";
 import { getAccount, updateAccount } from "../../accounts/services/accountService";
 import type { Account } from "../../../types/account";
 import { colors, screenStyles } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 export function CurrencySettingsScreen() {
   const currentAccountId = useAccountStore((state) => state.currentAccountId);
@@ -123,6 +124,7 @@ export function CurrencySettingsScreen() {
       contentContainerStyle={screenStyles.scrollContent}
     >
       <View>
+        <PageBackButton onPress={() => router.back()} />
         <Text style={screenStyles.title}>Currency Settings</Text>
 
         <Text style={screenStyles.subtitle}>

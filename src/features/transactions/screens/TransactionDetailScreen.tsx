@@ -28,6 +28,7 @@ import {
   removeAttachment,
 } from "../services/attachmentService";
 import { colors, radii, screenStyles } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 function confirmDialog(
   title: string,
@@ -210,11 +211,7 @@ export function TransactionDetailScreen({
       style={screenStyles.root}
       contentContainerStyle={screenStyles.scrollContent}
     >
-      {onBack && (
-        <Pressable onPress={onBack}>
-          <Text style={[screenStyles.label, { fontWeight: "600" }]}>← Back</Text>
-        </Pressable>
-      )}
+      <PageBackButton onPress={onBack ?? (() => router.back())} />
 
       <View
         style={{

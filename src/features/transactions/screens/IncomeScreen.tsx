@@ -22,6 +22,7 @@ import { getProfile } from "../../onboarding/services/profileService";
 import { createIncome } from "../services/incomeService";
 import { trackEvent } from "../../../services/analytics/analyticsService";
 import { colors, screenStyles } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 interface PendingIncome {
   amount: number;
@@ -290,6 +291,7 @@ export function IncomeScreen() {
       {/* Header */}
 
       <View>
+        <PageBackButton onPress={() => router.replace("/(tabs)")} />
         <Text style={screenStyles.title}>Add Income</Text>
 
         <Text style={screenStyles.subtitle}>

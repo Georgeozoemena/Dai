@@ -16,6 +16,7 @@ import {
   updateTransaction,
 } from "../services/transactionService";
 import { colors, screenStyles } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 interface EditTransactionScreenProps {
   transactionId: string;
@@ -201,11 +202,7 @@ export function EditTransactionScreen({
       style={screenStyles.root}
       contentContainerStyle={screenStyles.scrollContent}
     >
-      {onBack && (
-        <Pressable onPress={onBack}>
-          <Text style={[screenStyles.label, { fontWeight: "600" }]}>← Back</Text>
-        </Pressable>
-      )}
+      <PageBackButton onPress={onBack ?? (() => router.back())} />
 
       <View>
         <Text style={screenStyles.title}>Edit Transaction</Text>

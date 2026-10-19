@@ -34,6 +34,7 @@ import {
 import { BudgetWarningModal } from "../../budget/components/BudgetWarningModal";
 
 import { colors, screenStyles } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 interface PendingExpense {
   amount: number;
@@ -388,6 +389,7 @@ export function ExpenseScreen() {
     >
       {/* Header */}
       <View>
+        <PageBackButton onPress={() => router.replace("/(tabs)")} />
         <Text style={screenStyles.title}>Add Expense</Text>
 
         <Text style={screenStyles.subtitle}>

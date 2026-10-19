@@ -18,6 +18,7 @@ import { createProfile, getProfile, updateProfile } from "../services/profileSer
 import { useAuthStore } from "../../../store/auth/authStore";
 import { generateId } from "../../../utils/id";
 import { colors } from "../../../theme";
+import { PageBackButton } from "../../../components/PageBackButton";
 import { PhoneInput } from "../../auth/components/ui/PhoneInput";
 
 interface ProfileScreenProps {
@@ -183,12 +184,7 @@ export function ProfileScreen({
   return (
     <View style={styles.container}>
       {/* Back Button */}
-      <Pressable 
-        onPress={() => router.back()} 
-        style={styles.backButton}
-      >
-        <Ionicons name="chevron-back" size={28} color="#1a1a1a" />
-      </Pressable>
+      <PageBackButton onPress={() => router.back()} style={styles.backButton} />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -312,7 +308,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 20,
   },
   title: {
     fontSize: 36,

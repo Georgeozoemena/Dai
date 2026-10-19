@@ -22,6 +22,7 @@ import {
 import { router } from "expo-router";
 import { colors, screenStyles } from "../../../theme";
 import { generateId } from "../../../utils/id";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 export function BudgetBuilderScreen() {
   const [step, setStep] = useState(1);
@@ -221,6 +222,7 @@ export function BudgetBuilderScreen() {
       {/* Header */}
 
       <View>
+        <PageBackButton onPress={() => router.back()} />
         <Text style={screenStyles.title}>Build Your Budget</Text>
 
         <Text style={screenStyles.subtitle}>Step {step} of 6</Text>

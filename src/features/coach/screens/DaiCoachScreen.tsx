@@ -41,6 +41,7 @@ import { trackEvent } from "../../../services/analytics/analyticsService";
 
 import { colors } from "../../../theme";
 import { formatCurrency } from "../../../utils/currency";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 // ========== Static AI Avatar Component ==========
 function AnimatedAIAvatar({ isThinking }: { isThinking: boolean }) {
@@ -425,6 +426,7 @@ export function DaiCoachScreen() {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
+      <PageBackButton onPress={() => router.replace("/(tabs)")} />
       {/* Header - Greeting */}
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {userName}</Text>
@@ -1032,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 100,
     gap: 20,
   },

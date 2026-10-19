@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, radii } from '../../../theme';
+import { PageBackButton } from '../../../components/PageBackButton';
 import { useAuthStore } from '../../../store/auth/authStore';
 
 interface UserBioData {
@@ -303,9 +304,7 @@ export function UserBioScreen() {
         {/* Back Button - Only show when not in onboarding */}
         {!isNewUser && (
           <View style={styles.backButtonContainer}>
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </Pressable>
+            <PageBackButton onPress={() => router.back()} style={styles.backButton} />
           </View>
         )}
 
@@ -447,7 +446,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 40,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   backButtonContainer: {
@@ -455,9 +454,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',

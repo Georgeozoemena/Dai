@@ -17,6 +17,7 @@ import { useEmailAuth } from '../hooks/useEmailAuth';
 import { useIdentityManager } from '../hooks/useIdentityManager';
 import { PasswordStrengthMeter, isPasswordValid } from '../components/ui/PasswordStrengthMeter';
 import { colors, radii } from '../../../theme';
+import { PageBackButton } from '../../../components/PageBackButton';
 
 type Mode = 'login' | 'signup';
 
@@ -136,9 +137,7 @@ export function EmailAuthScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </Pressable>
+          <PageBackButton onPress={() => router.back()} style={styles.backButton} />
         </View>
 
         {/* Title */}
@@ -304,9 +303,9 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',

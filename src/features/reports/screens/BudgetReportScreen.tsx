@@ -10,6 +10,7 @@ import {
 
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { PageBackButton } from "../../../components/PageBackButton";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { BudgetOverview } from "../../budget/services/budgetOverviewService";
@@ -187,7 +188,7 @@ export function BudgetReportScreen() {
       <View style={{ flex: 1, backgroundColor: "#FEFDFB" }}>
         <View
           style={{
-            paddingTop: 60,
+            paddingTop: 16,
             paddingBottom: 20,
             paddingHorizontal: 20,
             flexDirection: "row",
@@ -195,18 +196,7 @@ export function BudgetReportScreen() {
             justifyContent: "space-between",
           }}
         >
-          <Pressable
-            onPress={() => router.back()}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-          </Pressable>
+          <PageBackButton onPress={() => router.back()} style={{ marginBottom: 0, marginLeft: 0 }} />
 
           <Text
             style={{
@@ -261,7 +251,7 @@ export function BudgetReportScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: 60,
+          paddingTop: 16,
           paddingBottom: 20,
           paddingHorizontal: 20,
           flexDirection: "row",
@@ -269,18 +259,7 @@ export function BudgetReportScreen() {
           justifyContent: "space-between",
         }}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-        </Pressable>
+        <PageBackButton onPress={() => router.back()} style={{ marginBottom: 0, marginLeft: 0 }} />
 
         <Text
           style={{

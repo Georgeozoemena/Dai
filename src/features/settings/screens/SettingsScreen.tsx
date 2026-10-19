@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { logoutUser } from "../../auth/services/logoutService";
 import { colors } from "../../../theme";
 import { useAuthStore } from "../../../store/auth/authStore";
+import { PageBackButton } from "../../../components/PageBackButton";
 
 const settingsItems = [
   {
@@ -130,6 +131,7 @@ export function SettingsScreen() {
         paddingBottom: 40,
       }}
     >
+        <PageBackButton onPress={() => router.replace("/(tabs)")} />
         {/* User Profile Card */}
         <View
           style={{
